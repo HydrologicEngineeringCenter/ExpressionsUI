@@ -30,7 +30,6 @@ public class ExpressionNodeTextBox extends JPanel {
         textArea.setBorder(new EmptyBorder(8, 8, 8, 8));
         textArea.setText("");
 
-        // Listen to ALL document changes (typing, pasting, deleting, undo/redo)
         textArea.getDocument().addDocumentListener(new DocumentListener() {
             @Override public void insertUpdate(DocumentEvent e) { notifyUpdate(); }
             @Override public void removeUpdate(DocumentEvent e) { notifyUpdate(); }
@@ -57,35 +56,36 @@ public class ExpressionNodeTextBox extends JPanel {
         isProgrammaticUpdate = false;
     }
 
-    /**
-     * Inserts a node's PreFixSyntax at the current caret position.
-     * Automatically adds a leading space if needed.
-     */
     public void insertNodeAtCursor(ExpressionNode node) {
-        isProgrammaticUpdate = true;
-        String syntax = "";
-        if (node != null) {
-            try {
-                syntax = node.PreFixSyntax();
-            } catch (Exception e) {
-                syntax = node.getClass().getSimpleName() + "()";
-            }
+        if (node == null) return;
+        String syntax;
+        try {
+            syntax = node.PreFixSyntax();
+        } catch (Exception e) {
+            syntax = node.getClass().getSimpleName() + "()";
         }
-        if (syntax.isEmpty()) return;
+        insertTextAtCursor(syntax);
+    }
 
+    /**
+     * Inserts a raw syntax string at the cursor. Used as a fallback when
+     * AST node instantiation fails, keeping the UI resilient.
+     */
+    public void insertTextAtCursor(String text) {
+        if (text == null || text.isEmpty()) return;
+        isProgrammaticUpdate = true;
         int caretPos = textArea.getCaretPosition();
         String existing = textArea.getText();
         
-        // Add a space before if inserting in the middle and previous char isn't whitespace
         if (caretPos > 0 && !existing.isEmpty()) {
             char prevChar = existing.charAt(caretPos - 1);
             if (!Character.isWhitespace(prevChar)) {
-                syntax = " " + syntax;
+                text = " " + text;
             }
         }
         
-        textArea.replaceRange(syntax, caretPos, caretPos);
-        textArea.setCaretPosition(caretPos + syntax.length());
+        textArea.replaceRange(text, caretPos, caretPos);
+        textArea.setCaretPosition(caretPos + text.length());
         textArea.requestFocusInWindow();
         isProgrammaticUpdate = false;
     }

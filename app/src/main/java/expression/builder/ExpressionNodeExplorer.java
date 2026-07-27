@@ -1,10 +1,8 @@
 package expression.builder;
 
 import usace.hec.expressions.*;
-import usace.hec.expressions.logical.DoubleIfNode;
 
 import javax.swing.*;
-import javax.swing.border.Border;
 import java.awt.*;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -77,8 +75,18 @@ public class ExpressionNodeExplorer {
         try {
             ExpressionNode newNode = instantiateDescriptor(descriptor);
             textBox.insertNodeAtCursor(newNode);
-            // The text box will automatically trigger handleTextUpdate via DocumentListener
         } catch (Exception e) {
+            // Fallback: insert the default syntax string directly.
+            // This keeps the UI resilient even when constructor reflection fails.
+            try {
+                String fallbackSyntax = descriptor.getDefaultSyntax(false);
+                if (fallbackSyntax != null && !fallbackSyntax.isEmpty()) {
+                    textBox.insertTextAtCursor(fallbackSyntax);
+                    return;
+                }
+            } catch (Exception ex) { /* ignore */ }
+            
+            // If fallback also fails, show error in the label
             handleError(e, "Insert Error");
         }
     }
@@ -108,8 +116,6 @@ public class ExpressionNodeExplorer {
     }
 
     private Object evaluateSafely(ExpressionNode node) throws Exception {
-        // Strongly typed evaluation: find the evaluate() method via reflection
-        // since the base ExpressionNode interface no longer declares evaluate()
         Method evalMethod = node.getClass().getMethod("evaluate");
         return evalMethod.invoke(node);
     }
@@ -118,33 +124,26 @@ public class ExpressionNodeExplorer {
         Class<?> clazz = descriptor.getClazz();
         int arity = descriptor.getArity();
 
-        // Create dummy leaves based on arity
-        ExpressionNode dummy0 = createDummyLeaf(Double.class);
-        ExpressionNode dummy1 = createDummyLeaf(Double.class);
-        ExpressionNode dummy2 = createDummyLeaf(Double.class);
-        ExpressionNode boolDummy = createDummyLeaf(Boolean.class);
+        ExpressionNode dummyDouble = createDummyLeaf(Double.class);
+        ExpressionNode dummyBool = createDummyLeaf(Boolean.class);
 
         return switch (arity) {
             case 0 -> {
-                // Leaf/0-arity: try no-arg or String-arg constructor
                 try { yield (ExpressionNode) clazz.getConstructor().newInstance(); }
                 catch (NoSuchMethodException e) { yield (ExpressionNode) clazz.getConstructor(String.class).newInstance("dummy"); }
             }
             case 1 -> {
-                // Unary: expects 1 ExpressionNode child
                 Constructor<?> ctor = clazz.getDeclaredConstructor(ExpressionNode.class);
-                yield (ExpressionNode) ctor.newInstance(dummy0);
+                yield (ExpressionNode) ctor.newInstance(dummyDouble);
             }
             case 2 -> {
-                // Binary: expects 2 ExpressionNode children
                 Constructor<?> ctor = clazz.getDeclaredConstructor(ExpressionNode.class, ExpressionNode.class);
-                yield (ExpressionNode) ctor.newInstance(dummy0, dummy1);
+                yield (ExpressionNode) ctor.newInstance(dummyDouble, dummyDouble);
             }
             case 3 -> {
-                // Ternary (IF): expects Boolean condition + 2 branches
                 Constructor<?> ctor = clazz.getDeclaredConstructor(
                         BooleanExpressionNode.class, ExpressionNode.class, ExpressionNode.class);
-                yield (ExpressionNode) ctor.newInstance(boolDummy, dummy0, dummy1);
+                yield (ExpressionNode) ctor.newInstance((BooleanExpressionNode) dummyBool, dummyDouble, dummyDouble);
             }
             default -> throw new IllegalStateException("Unsupported arity: " + arity);
         };
@@ -171,7 +170,8 @@ public class ExpressionNodeExplorer {
     private void handleError(Exception e, String context) {
         String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
         if (e.getCause() != null) {
-            msg = e.getCause().getMessage() != null ? e.getCause().getMessage() : e.getCause().getClass().getSimpleName();
+            Throwable cause = e.getCause();
+            msg = cause.getMessage() != null ? cause.getMessage() : cause.getClass().getSimpleName();
         }
         evaluationLabel.setText("Evaluation: " + context + " (" + msg + ")");
         evaluationLabel.setForeground(new Color(0xD3, 0x2F, 0x2F));
