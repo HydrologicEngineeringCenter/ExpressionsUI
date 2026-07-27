@@ -1,4 +1,4 @@
-package main.java.expression.builder;
+package expression.builder;
 
 import java.awt.*;
 import java.util.List;
@@ -20,13 +20,12 @@ public class ExpressionNodeTableView extends JPanel {
         JTable table = new JTable(model);
         table.setFillsViewportHeight(true);
 
-        table.getColumnModel().getColumn(0).setPreferredWidth(100);
-        table.getColumnModel().getColumn(1).setPreferredWidth(150);
-        table.getColumnModel().getColumn(2).setPreferredWidth(120);
-        table.getColumnModel().getColumn(3).setPreferredWidth(60);
+        table.getColumnModel().getColumn(0).setPreferredWidth(110);
+        table.getColumnModel().getColumn(1).setPreferredWidth(140);
+        table.getColumnModel().getColumn(2).setPreferredWidth(100);
+        table.getColumnModel().getColumn(3).setPreferredWidth(100);
         table.getColumnModel().getColumn(4).setPreferredWidth(60);
-        table.getColumnModel().getColumn(5).setPreferredWidth(60);
-        table.getColumnModel().getColumn(6).setPreferredWidth(60);
+        table.getColumnModel().getColumn(5).setPreferredWidth(150);
 
         sorter = new TableRowSorter<>(model);
         table.setRowSorter(sorter);
@@ -47,8 +46,8 @@ public class ExpressionNodeTableView extends JPanel {
                     String lower = text.toLowerCase();
                     sorter.setRowFilter(new RowFilter<ExpressionNodeTableModel, Integer>() {
                         @Override
-                        public boolean include(Entry<? extends ExpressionNodeTableModel, ? extends Integer> entry) {
-                            int row = entry.getIdentifier();
+                        public boolean include(Entry entry) {
+                            int row = (int)entry.getIdentifier();
                             for (int i = 0; i < model.getColumnCount(); i++) {
                                 if (String.valueOf(model.getValueAt(row, i)).toLowerCase().contains(lower)) {
                                     return true;
@@ -85,23 +84,24 @@ public class ExpressionNodeTableView extends JPanel {
 
     static class ExpressionNodeTableModel extends AbstractTableModel {
         private final List<ExpressionNodeRegistry.NodeDescriptor> data;
-        private final String[] columns = {"Category", "Class", "Operator", "Infix", "Leaf", "Binary", "Unary"};
+        private final String[] columns = {"Category", "Class", "Operator", "Infix", "Arity", "Syntax"};
 
         ExpressionNodeTableModel(List<ExpressionNodeRegistry.NodeDescriptor> data) { this.data = data; }
 
         @Override public int getRowCount() { return data.size(); }
         @Override public int getColumnCount() { return columns.length; }
         @Override public String getColumnName(int col) { return columns[col]; }
-        @Override public Object getValueAt(int row, int col) {
+
+        @Override
+        public Object getValueAt(int row, int col) {
             ExpressionNodeRegistry.NodeDescriptor d = data.get(row);
             return switch (col) {
                 case 0 -> d.getCategory();
                 case 1 -> d.getSimpleName();
-                case 2 -> d.getOpName();
-                case 3 -> d.getInfixName();
-                case 4 -> d.isLeaf();
-                case 5 -> d.isBinary();
-                case 6 -> d.isUnary();
+                case 2 -> d.getDisplayName();
+                case 3 -> d.getDisplayNameInfix();
+                case 4 -> d.getArity();
+                case 5 -> d.getDefaultSyntax(false);
                 default -> "";
             };
         }

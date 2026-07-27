@@ -1,4 +1,4 @@
-package main.java.expression.builder;
+package expression.builder;
 
 import java.awt.EventQueue;
 import javax.swing.JFrame;

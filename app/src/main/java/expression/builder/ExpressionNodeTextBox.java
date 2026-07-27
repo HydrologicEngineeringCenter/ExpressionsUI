@@ -1,12 +1,10 @@
-package main.java.expression.builder;
+package expression.builder;
 
 import java.awt.*;
-import java.awt.event.FocusAdapter;
-import java.awt.event.FocusEvent;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import usace.hec.expressions.ExpressionNode;
 
 public class ExpressionNodeTextBox extends JPanel {
@@ -32,28 +30,17 @@ public class ExpressionNodeTextBox extends JPanel {
         textArea.setBorder(new EmptyBorder(8, 8, 8, 8));
         textArea.setText("");
 
-        textArea.addFocusListener(new FocusAdapter() {
-            @Override
-            public void focusLost(FocusEvent e) {
+        // Listen to ALL document changes (typing, pasting, deleting, undo/redo)
+        textArea.getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { notifyUpdate(); }
+            @Override public void removeUpdate(DocumentEvent e) { notifyUpdate(); }
+            @Override public void changedUpdate(DocumentEvent e) { notifyUpdate(); }
+
+            private void notifyUpdate() {
                 if (!isProgrammaticUpdate && textUpdateListener != null) {
                     String text = textArea.getText().trim();
                     if (!text.isEmpty()) {
                         textUpdateListener.onTextUpdated(text);
-                    }
-                }
-                isProgrammaticUpdate = false;
-            }
-        });
-
-        textArea.addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                if (e.getKeyCode() == KeyEvent.VK_ENTER && (e.getModifiersEx() == 0)) {
-                    if (textUpdateListener != null) {
-                        String text = textArea.getText().trim();
-                        if (!text.isEmpty()) {
-                            textUpdateListener.onTextUpdated(text);
-                        }
                     }
                 }
             }
@@ -62,18 +49,19 @@ public class ExpressionNodeTextBox extends JPanel {
         add(new JScrollPane(textArea), BorderLayout.CENTER);
     }
 
-    public void setNodeText(ExpressionNode<?> node) {
+    public void setNodeText(ExpressionNode node) {
         isProgrammaticUpdate = true;
         String syntax = node != null ? node.PreFixSyntax() : "";
         textArea.setText(syntax);
         textArea.setCaretPosition(0);
+        isProgrammaticUpdate = false;
     }
 
     /**
      * Inserts a node's PreFixSyntax at the current caret position.
      * Automatically adds a leading space if needed.
      */
-    public void insertNodeAtCursor(ExpressionNode<?> node) {
+    public void insertNodeAtCursor(ExpressionNode node) {
         isProgrammaticUpdate = true;
         String syntax = "";
         if (node != null) {
@@ -99,6 +87,7 @@ public class ExpressionNodeTextBox extends JPanel {
         textArea.replaceRange(syntax, caretPos, caretPos);
         textArea.setCaretPosition(caretPos + syntax.length());
         textArea.requestFocusInWindow();
+        isProgrammaticUpdate = false;
     }
 
     public String getExpression() {

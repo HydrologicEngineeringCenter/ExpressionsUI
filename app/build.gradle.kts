@@ -14,7 +14,7 @@ repositories {
 }
 
 dependencies {
-    implementation("mil.army.usace.hec:expressions:1.0.2")
+    implementation("mil.army.usace.hec:expressions:1.0.11")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.4")
 }
 

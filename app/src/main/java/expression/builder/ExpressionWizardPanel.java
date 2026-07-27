@@ -1,4 +1,4 @@
-package main.java.expression.builder;
+package expression.builder;
 
 import javax.swing.*;
 import javax.swing.border.*;
