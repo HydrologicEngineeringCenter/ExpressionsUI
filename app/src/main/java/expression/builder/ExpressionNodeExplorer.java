@@ -4,8 +4,11 @@ import usace.hec.expressions.*;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ExpressionNodeExplorer {
@@ -23,6 +26,8 @@ public class ExpressionNodeExplorer {
 
     private void createAndShowGUI() {
         List<ExpressionNodeRegistry.NodeDescriptor> nodes = ExpressionNodeRegistry.discoverAllNodes();
+        List<VariableTableView.ExpressionEntry> variables = new ArrayList<>();
+        variables.add(new VariableTableView.ExpressionEntry("hi","10.0", new DoubleConstantNode(10.0)));
 
         JFrame frame = new JFrame("HEC Expression Builder");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -35,20 +40,92 @@ public class ExpressionNodeExplorer {
         ExpressionNodeTableView tableView = new ExpressionNodeTableView(nodes);
         evaluationLabel = createEvaluationLabel();
 
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.add(evaluationLabel, BorderLayout.NORTH);
-        bottomPanel.add(textBox, BorderLayout.CENTER);
-        bottomPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
+
+        JTabbedPane tabbedPane = new JTabbedPane();
+
+        tabbedPane.add("Node Table", tableView);
+
+        VariableTableView variableView = new VariableTableView(variables);
+
+
+        tabbedPane.add("Variable Table", variableView);
+
+        JPanel expressionPanel = new JPanel(new BorderLayout());
+        expressionPanel.add(textBox, BorderLayout.CENTER);
+        expressionPanel.add(evaluationLabel, BorderLayout.SOUTH);
+        expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
+
 
         ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, this::handleNodeInsertion);
 
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tableView, treeView);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tabbedPane, treeView);
         splitPane.setDividerLocation(400);
         splitPane.setResizeWeight(0.5);
 
+        JPanel buttonPanel = new JPanel(new GridBagLayout());
+        GridBagConstraints gc = new GridBagConstraints();
+        JTextField nameField = new JTextField(20);
+
+        JButton saveButton =  new JButton("Save");
+
+        variableView.setVariableTableListener(new VariableTableListener() {
+            @Override
+            public void getExpression(VariableTableView.ExpressionEntry e) {
+                textBox.setNodeText(e.getExpressionNode());
+                nameField.setText(e.getName());
+            }
+        });
+
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (!nameField.getText().isEmpty()){
+                    String name = nameField.getText();
+                    String expression = textBox.getExpression();
+                    if (!expression.isEmpty()) {
+                        try {
+                            ExpressionNode expNode = parseExpression(expression);
+                            VariableTableView.ExpressionEntry newExp = new VariableTableView.ExpressionEntry(name, expression, expNode);
+                            int index = variableView.expressionExists(newExp);
+                            if (index != -1) {
+                                variableView.editEntry(index, newExp);
+                            } else {
+                                variableView.addExpression(newExp);
+                            }
+                        } catch (Exception ignored) {
+                            return;
+                        }
+                    }
+                    return;
+                }
+                return;
+            }
+        });
+
+        gc.weightx = 1;
+        gc.weighty = 1;
+
+        gc.gridy = 0;
+
+        gc.gridx = 0;
+        gc.fill = GridBagConstraints.NONE;
+        gc.anchor = GridBagConstraints.LINE_END;
+        gc.insets = new Insets(0, 0, 0, 5);
+        buttonPanel.add(new JLabel("Name: "), gc);
+
+        gc.gridx = 1;
+        gc.anchor = GridBagConstraints.LINE_START;
+        gc.insets = new Insets(0, 0, 0, 0);
+        buttonPanel.add(nameField, gc);
+
+        gc.gridx = 2;
+
+        buttonPanel.add(saveButton, gc);
+
         frame.setLayout(new BorderLayout());
-        frame.add(splitPane, BorderLayout.CENTER);
-        frame.add(bottomPanel, BorderLayout.SOUTH);
+        frame.add(splitPane, BorderLayout.NORTH);
+        frame.add(expressionPanel, BorderLayout.CENTER);
+        frame.add(buttonPanel, BorderLayout.SOUTH);
         frame.setVisible(true);
     }
 
@@ -85,7 +162,7 @@ public class ExpressionNodeExplorer {
                     return;
                 }
             } catch (Exception ex) { /* ignore */ }
-            
+
             // If fallback also fails, show error in the label
             handleError(e, "Insert Error");
         }

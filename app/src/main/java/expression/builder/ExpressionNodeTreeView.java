@@ -1,14 +1,13 @@
 package expression.builder;
 
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
 import java.util.function.Consumer;
 import javax.swing.*;
-import javax.swing.tree.DefaultMutableTreeNode;
-import javax.swing.tree.DefaultTreeCellRenderer;
-import javax.swing.tree.DefaultTreeModel;
-import javax.swing.tree.TreeSelectionModel;
+import javax.swing.tree.*;
 
 public class ExpressionNodeTreeView extends JPanel {
 
@@ -67,14 +66,20 @@ public class ExpressionNodeTreeView extends JPanel {
         });
 
         // Selection handler: pull the descriptor directly from the tree node
-        tree.addTreeSelectionListener(e -> {
-            DefaultMutableTreeNode selectedNode =
-                    (DefaultMutableTreeNode) tree.getLastSelectedPathComponent();
-            if (selectedNode == null || selectedNode.isRoot()) return;
+        tree.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                TreePath path = tree.getPathForLocation(e.getX(), e.getY());
+                if (path != null) {
+                    DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
+                    if (node == null || node.isRoot()) return;
 
-            Object userObject = selectedNode.getUserObject();
-            if (userObject instanceof ExpressionNodeRegistry.NodeDescriptor descriptor) {
-                onNodeSelected.accept(descriptor);
+                    Object userObject = node.getUserObject();
+                    if (userObject instanceof ExpressionNodeRegistry.NodeDescriptor descriptor) {
+                        onNodeSelected.accept(descriptor);
+                    }
+                }
+                return;
             }
         });
 
