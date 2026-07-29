@@ -89,7 +89,11 @@ public class ExpressionNodeExplorer {
                 if (!nameField.getText().isEmpty()){
                     String name = nameField.getText();
                     String expression = textBox.getExpression();
-                    double defaultVal = Double.parseDouble(defaultValueField.getText());
+                    String defaultVal = defaultValueField.getText();
+                    try {double doubleVal = Double.parseDouble(defaultValueField.getText());
+                    } catch (Exception ignored){
+                        //Nothing happens if parseDouble is null
+                    }
                     if (!expression.isEmpty() && !updatableCheck.isSelected()) {
                         try {
                             ExpressionNode expNode = parseExpression(expression);
