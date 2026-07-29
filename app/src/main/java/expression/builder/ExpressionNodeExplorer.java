@@ -89,12 +89,12 @@ public class ExpressionNodeExplorer {
                 if (!nameField.getText().isEmpty()){
                     String name = nameField.getText();
                     String expression = textBox.getExpression();
-                    String defaultVal = defaultValueField.getText();
+                    double defaultVal = Double.parseDouble(defaultValueField.getText());
                     if (!expression.isEmpty() && !updatableCheck.isSelected()) {
                         try {
                             ExpressionNode expNode = parseExpression(expression);
-                            VariableTableView.ExpressionEntry newExp = new VariableTableView.ExpressionEntry(name, expression, expNode,null);
-                            int index = variableView.expressionExists(newExp);
+                            VariableTableView.ExpressionEntry newExp = new VariableTableView.ExpressionEntry(name, expression, expNode,0);
+                            int index = variableView.expressionExists(name);
                             if (index != -1) {
                                 variableView.editEntry(index, newExp);
                             } else {
@@ -105,8 +105,8 @@ public class ExpressionNodeExplorer {
                         }
                     } else {
                         ExpressionNode updatable = new UpdateableLeafNode(name);
-                        VariableTableView.ExpressionEntry newExp = new VariableTableView.ExpressionEntry(name, "["+ name + "]", updatable, defaultVal);
-                        int index = variableView.expressionExists(newExp);
+                        VariableTableView.ExpressionEntry newExp = new VariableTableView.ExpressionEntry(name, "[" + name + "]", updatable, defaultVal);
+                        int index = variableView.expressionExists(name);
                         if (index != -1) {
                             variableView.editEntry(index, newExp);
                         } else {

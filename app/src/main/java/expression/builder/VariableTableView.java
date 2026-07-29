@@ -111,9 +111,8 @@ public class VariableTableView extends JPanel {
         refresh();
     }
 
-    public int expressionExists(ExpressionEntry newExp) {
+    public int expressionExists(String name) {
         List<ExpressionEntry> data = model.getData();
-        String name = newExp.getName();
         for (int i = 0; i < data.size(); i++){
             if (name.equals(data.get(i).getName())){
                 return i;
