@@ -54,7 +54,7 @@ public class VariableTableView extends JPanel {
 
             private void applyFilter() {
                 String text = searchField.getText();
-                if (text.isEmpty()) {
+                if (text.isEmpty() || text.equals("Find a variable...")) {
                     sorter.setRowFilter(null);
                 } else {
                     String lower = text.toLowerCase();

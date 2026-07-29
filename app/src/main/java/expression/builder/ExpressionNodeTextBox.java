@@ -38,9 +38,7 @@ public class ExpressionNodeTextBox extends JPanel {
             private void notifyUpdate() {
                 if (!isProgrammaticUpdate && textUpdateListener != null) {
                     String text = textArea.getText().trim();
-                    if (!text.isEmpty()) {
-                        textUpdateListener.onTextUpdated(text);
-                    }
+                    textUpdateListener.onTextUpdated(text);
                 }
             }
         });

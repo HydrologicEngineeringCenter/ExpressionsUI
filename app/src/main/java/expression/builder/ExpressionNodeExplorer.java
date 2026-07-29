@@ -69,6 +69,8 @@ public class ExpressionNodeExplorer {
         JPanel buttonPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gc = new GridBagConstraints();
         JTextField nameField = new JTextField(20);
+        JTextField defaultValueField = new JTextField(20);
+        JCheckBox updatableCheck = new JCheckBox();
 
         JButton saveButton =  new JButton("Save");
 
@@ -87,10 +89,11 @@ public class ExpressionNodeExplorer {
                 if (!nameField.getText().isEmpty()){
                     String name = nameField.getText();
                     String expression = textBox.getExpression();
-                    if (!expression.isEmpty()) {
+                    String defaultVal = defaultValueField.getText();
+                    if (!expression.isEmpty() && !updatableCheck.isSelected()) {
                         try {
                             ExpressionNode expNode = parseExpression(expression);
-                            VariableTableView.ExpressionEntry newExp = new VariableTableView.ExpressionEntry(name, expression, expNode,4);
+                            VariableTableView.ExpressionEntry newExp = new VariableTableView.ExpressionEntry(name, expression, expNode,null);
                             int index = variableView.expressionExists(newExp);
                             if (index != -1) {
                                 variableView.editEntry(index, newExp);
@@ -100,12 +103,36 @@ public class ExpressionNodeExplorer {
                         } catch (Exception ignored) {
                             return;
                         }
+                    } else {
+                        ExpressionNode updatable = new UpdateableLeafNode(name);
+                        VariableTableView.ExpressionEntry newExp = new VariableTableView.ExpressionEntry(name, "["+ name + "]", updatable, defaultVal);
+                        int index = variableView.expressionExists(newExp);
+                        if (index != -1) {
+                            variableView.editEntry(index, newExp);
+                        } else {
+                            variableView.addExpression(newExp);
+                        }
                     }
                     return;
                 }
                 return;
             }
         });
+
+        updatableCheck.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (updatableCheck.isSelected()) {
+                    defaultValueField.setEnabled(true);
+                } else {
+                    defaultValueField.setEnabled(false);
+                }
+            }
+        });
+
+        updatableCheck.setSelected(false);
+        defaultValueField.setEnabled(false);
+        textBox.setEnabled(true);
 
         gc.weightx = 1;
         gc.weighty = 1;
@@ -124,13 +151,41 @@ public class ExpressionNodeExplorer {
         buttonPanel.add(nameField, gc);
 
         gc.gridx = 2;
+        gc.fill = GridBagConstraints.NONE;
+        gc.anchor = GridBagConstraints.LINE_END;
+        gc.insets = new Insets(0, 0, 0, 5);
+        buttonPanel.add(new JLabel("Default Value: "), gc);
 
+        gc.gridx = 3;
+        gc.anchor = GridBagConstraints.LINE_START;
+        gc.insets = new Insets(0, 0, 0, 0);
+        buttonPanel.add(defaultValueField, gc);
+
+        gc.gridx = 4;
+        gc.fill = GridBagConstraints.NONE;
+        gc.anchor = GridBagConstraints.LINE_END;
+        gc.insets = new Insets(0, 0, 0, 5);
+        buttonPanel.add(new JLabel("Updatable?"), gc);
+
+        gc.gridx = 5;
+        gc.anchor = GridBagConstraints.LINE_START;
+        gc.insets = new Insets(0, 0, 0, 0);
+        buttonPanel.add(updatableCheck, gc);
+
+
+        gc.gridx = 6;
+        gc.anchor = GridBagConstraints.LAST_LINE_START;
         buttonPanel.add(saveButton, gc);
 
         frame.setLayout(new BorderLayout());
-        frame.add(splitPane, BorderLayout.NORTH);
-        frame.add(expressionPanel, BorderLayout.CENTER);
-        frame.add(buttonPanel, BorderLayout.SOUTH);
+
+        JPanel bottomPanel = new JPanel(new BorderLayout());
+        bottomPanel.add(expressionPanel, BorderLayout.CENTER);
+        bottomPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        JSplitPane nestedFrame = new JSplitPane(JSplitPane.VERTICAL_SPLIT, splitPane, bottomPanel);
+
+        frame.add(nestedFrame, BorderLayout.CENTER);
         frame.setVisible(true);
     }
 
@@ -146,7 +201,11 @@ public class ExpressionNodeExplorer {
 
     private void handleTextUpdate(String text) {
         try {
-            currentExpression = parseExpression(text);
+            if (!text.isEmpty()) {
+                currentExpression = parseExpression(text);
+            } else {
+                currentExpression = null;
+            }
             updateEvaluationLabel();
         } catch (Exception e) {
             handleError(e, "Parse Error");
