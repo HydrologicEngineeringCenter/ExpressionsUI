@@ -135,7 +135,7 @@ public class VariableTableView extends JPanel {
             this.data = data;
         }
 
-        private final String[] columns = {"Index", "Name", "Expression"};
+        private final String[] columns = {"Index", "Name", "Expression", "Default Value"};
 
         @Override
         public int getRowCount() {
@@ -159,6 +159,7 @@ public class VariableTableView extends JPanel {
                 case 0 -> rowIndex;
                 case 1 -> d.getName();
                 case 2 -> d.getExpression();
+                case 3 -> d.getDefaultValue();
                 default -> "";
             };
         }
@@ -180,6 +181,7 @@ public class VariableTableView extends JPanel {
         private String name;
         private ExpressionNode expressionNode;
         private String expression;
+        private Object defaultValue;
 
         /**
          * Creates an ExpressionEntry which contains a row index, a name to refer to at compute time, the {@link ExpressionNode} itself, and a comment the user would like to add.
@@ -187,10 +189,11 @@ public class VariableTableView extends JPanel {
          * @param expressionNode
          * @param expression
          */
-        public ExpressionEntry(String name, String expression, ExpressionNode expressionNode){
+        public ExpressionEntry(String name, String expression, ExpressionNode expressionNode, Object defaultValue){
             this.name = name;
             this.expression = expression;
             this.expressionNode = expressionNode;
+            this.defaultValue = defaultValue;
         }
 
         public String getName() {
@@ -211,6 +214,10 @@ public class VariableTableView extends JPanel {
 
         public String getExpression() {
             return expression;
+        }
+
+        public Object getDefaultValue() {
+            return defaultValue;
         }
 
         public void setExpression(String expression) {

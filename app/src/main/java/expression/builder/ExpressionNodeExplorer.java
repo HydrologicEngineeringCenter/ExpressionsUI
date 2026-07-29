@@ -3,6 +3,9 @@ package expression.builder;
 import usace.hec.expressions.*;
 
 import javax.swing.*;
+
+import expression.builder.VariableTableView.ExpressionEntry;
+
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -15,6 +18,7 @@ public class ExpressionNodeExplorer {
     private ExpressionNode currentExpression;
     private ExpressionNodeTextBox textBox;
     private JLabel evaluationLabel;
+    private VariableTableView variableView;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -27,7 +31,7 @@ public class ExpressionNodeExplorer {
     private void createAndShowGUI() {
         List<ExpressionNodeRegistry.NodeDescriptor> nodes = ExpressionNodeRegistry.discoverAllNodes();
         List<VariableTableView.ExpressionEntry> variables = new ArrayList<>();
-        variables.add(new VariableTableView.ExpressionEntry("hi","10.0", new DoubleConstantNode(10.0)));
+        variables.add(new VariableTableView.ExpressionEntry("hi","[hi]", new UpdateableLeafNode("hi"),10.0));
 
         JFrame frame = new JFrame("HEC Expression Builder");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -45,7 +49,7 @@ public class ExpressionNodeExplorer {
 
         tabbedPane.add("Node Table", tableView);
 
-        VariableTableView variableView = new VariableTableView(variables);
+        variableView = new VariableTableView(variables);
 
 
         tabbedPane.add("Variable Table", variableView);
@@ -71,8 +75,9 @@ public class ExpressionNodeExplorer {
         variableView.setVariableTableListener(new VariableTableListener() {
             @Override
             public void getExpression(VariableTableView.ExpressionEntry e) {
-                textBox.setNodeText(e.getExpressionNode());
-                nameField.setText(e.getName());
+                //textBox.setNodeText(e.getExpressionNode());
+                textBox.insertNodeAtCursor(e.getExpressionNode());
+                //nameField.setText(e.getName());
             }
         });
 
@@ -85,7 +90,7 @@ public class ExpressionNodeExplorer {
                     if (!expression.isEmpty()) {
                         try {
                             ExpressionNode expNode = parseExpression(expression);
-                            VariableTableView.ExpressionEntry newExp = new VariableTableView.ExpressionEntry(name, expression, expNode);
+                            VariableTableView.ExpressionEntry newExp = new VariableTableView.ExpressionEntry(name, expression, expNode,4);
                             int index = variableView.expressionExists(newExp);
                             if (index != -1) {
                                 variableView.editEntry(index, newExp);
@@ -171,8 +176,17 @@ public class ExpressionNodeExplorer {
     private ExpressionNode parseExpression(String text) throws Exception {
         ExpressionParser parser = new ExpressionParser();
         ParseResult result = parser.parse(text);
+        List<ExpressionEntry> data = variableView.getModel().getData();
+        DataHub dh = new DataHub();
+        for(ExpressionEntry e:data){
+            if(e.getExpressionNode() instanceof DataRequester){
+                dh.setValue(((DataRequester)e.getExpressionNode()).getName(), e.getDefaultValue());
+            }
+        }
         if (result.isSuccess()) {
-            return (ExpressionNode)result.getNode();
+            ExpressionNode node = (ExpressionNode)result.getNode();
+            node.setProvider(dh);
+            return node;
         }
         throw new IllegalArgumentException(result.getError() + " at position " + result.getError().position());
     }

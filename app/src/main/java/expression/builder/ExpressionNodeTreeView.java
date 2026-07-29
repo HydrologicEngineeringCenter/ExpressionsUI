@@ -79,7 +79,7 @@ public class ExpressionNodeTreeView extends JPanel {
                         onNodeSelected.accept(descriptor);
                     }
                 }
-                return;
+                //return;
             }
         });
 
