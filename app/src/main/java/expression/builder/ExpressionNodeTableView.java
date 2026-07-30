@@ -40,7 +40,7 @@ public class ExpressionNodeTableView extends JPanel {
 
             private void applyFilter() {
                 String text = searchField.getText();
-                if (text.isEmpty()) {
+                if (text.isEmpty() || text.equals("Filter by name, operator, or category...")) {
                     sorter.setRowFilter(null);
                 } else {
                     String lower = text.toLowerCase();
