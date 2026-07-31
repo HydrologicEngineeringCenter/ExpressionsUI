@@ -5,7 +5,8 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import usace.hec.expressions.ExpressionNode;
+
+import usace.hec.expressions.DisplayNode;
 
 public class ExpressionNodeTextBox extends JPanel {
     private final JTextArea textArea;
@@ -46,21 +47,21 @@ public class ExpressionNodeTextBox extends JPanel {
         add(new JScrollPane(textArea), BorderLayout.CENTER);
     }
 
-    public void setNodeText(ExpressionNode node) {
+    public void setNodeText(DisplayNode node) {
         isProgrammaticUpdate = true;
-        String syntax = node != null ? node.PreFixSyntax() : "";
+        String syntax = node != null ? node.defaultSyntax(false) : "";
         textArea.setText(syntax);
         textArea.setCaretPosition(0);
         isProgrammaticUpdate = false;
     }
 
-    public void insertNodeAtCursor(ExpressionNode node) {
+    public void insertNodeAtCursor(DisplayNode node) {
         if (node == null) return;
         String syntax;
         try {
-            syntax = node.PreFixSyntax();
+            syntax = node.defaultSyntax(false);
         } catch (Exception e) {
-            syntax = node.getClass().getSimpleName() + "()";
+            syntax = node.displayName(false) + "()";
         }
         insertTextAtCursor(syntax);
     }

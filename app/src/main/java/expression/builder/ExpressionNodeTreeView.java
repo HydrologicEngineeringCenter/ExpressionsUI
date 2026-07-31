@@ -9,24 +9,26 @@ import java.util.function.Consumer;
 import javax.swing.*;
 import javax.swing.tree.*;
 
+import usace.hec.expressions.DisplayNode;
+
 public class ExpressionNodeTreeView extends JPanel {
 
-    public ExpressionNodeTreeView(List<ExpressionNodeRegistry.NodeDescriptor> nodes,
-                                   Consumer<ExpressionNodeRegistry.NodeDescriptor> onNodeSelected) {
+    public ExpressionNodeTreeView(List<DisplayNode> nodes,
+                                   Consumer<DisplayNode> onNodeSelected) {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createTitledBorder("Operator Hierarchy"));
 
         // Group nodes by category
-        Map<String, List<ExpressionNodeRegistry.NodeDescriptor>> byCategory = new TreeMap<>();
-        for (ExpressionNodeRegistry.NodeDescriptor n : nodes) {
-            byCategory.computeIfAbsent(n.getCategory(), k -> new ArrayList<>()).add(n);
+        Map<String, List<DisplayNode>> byCategory = new TreeMap<>();
+        for (DisplayNode n : nodes) {
+            byCategory.computeIfAbsent(n.category(), k -> new ArrayList<>()).add(n);
         }
 
         // Build tree: root -> category -> node descriptor
         DefaultMutableTreeNode root = new DefaultMutableTreeNode("ExpressionOperators");
-        for (Map.Entry<String, List<ExpressionNodeRegistry.NodeDescriptor>> entry : byCategory.entrySet()) {
+        for (Map.Entry<String, List<DisplayNode>> entry : byCategory.entrySet()) {
             DefaultMutableTreeNode catNode = new DefaultMutableTreeNode(entry.getKey());
-            for (ExpressionNodeRegistry.NodeDescriptor n : entry.getValue()) {
+            for (DisplayNode n : entry.getValue()) {
                 // Store the descriptor directly in the tree node
                 catNode.add(new DefaultMutableTreeNode(n));
             }
@@ -50,12 +52,12 @@ public class ExpressionNodeTreeView extends JPanel {
                 DefaultMutableTreeNode node = (DefaultMutableTreeNode) value;
                 Object userObject = node.getUserObject();
 
-                if (userObject instanceof ExpressionNodeRegistry.NodeDescriptor descriptor) {
-                    setText(descriptor.getDisplayName());
+                if (userObject instanceof DisplayNode descriptor) {
+                    setText(descriptor.getOperator().getPrefixName());
                     setToolTipText(String.format("Category: %s%nArity: %d%nSyntax: %s",
-                            descriptor.getCategory(),
-                            descriptor.getArity(),
-                            descriptor.getDefaultSyntax(false)));
+                            descriptor.category(),
+                            descriptor.getOperator().getArity().getValue(),
+                            descriptor.defaultSyntax(false)));
                 } else {
                     setText(userObject.toString());
                     setToolTipText(null);
@@ -75,7 +77,7 @@ public class ExpressionNodeTreeView extends JPanel {
                     if (node == null || node.isRoot()) return;
 
                     Object userObject = node.getUserObject();
-                    if (userObject instanceof ExpressionNodeRegistry.NodeDescriptor descriptor) {
+                    if (userObject instanceof DisplayNode descriptor) {
                         onNodeSelected.accept(descriptor);
                     }
                 }

@@ -29,7 +29,7 @@ public class ExpressionNodeExplorer {
     }
 
     private void createAndShowGUI() {
-        List<ExpressionNodeRegistry.NodeDescriptor> nodes = ExpressionNodeRegistry.discoverAllNodes();
+        List<DisplayNode> nodes = ExpressionNodeRegistry.getAllNodes();
         List<VariableTableView.ExpressionEntry> variables = new ArrayList<>();
         variables.add(new VariableTableView.ExpressionEntry("hi","[hi]", new UpdateableLeafNode("hi"),10.0));
 
@@ -78,7 +78,34 @@ public class ExpressionNodeExplorer {
             @Override
             public void getExpression(VariableTableView.ExpressionEntry e) {
                 //textBox.setNodeText(e.getExpressionNode());
-                textBox.insertNodeAtCursor(e.getExpressionNode());
+
+                ExpressionOperator op = e.getExpressionNode().Operator();
+                ExpressionType t = e.getExpressionNode().resultType();
+                DisplayNode dn = new DisplayNode() {
+                    @Override 
+                    public String displayName(boolean infix) { 
+                        return infix ? op.getInfixName() : op.getPrefixName(); 
+                    }
+                    @Override 
+                    public String category() { 
+                        return op.getCategory(); 
+                    }
+                    @Override 
+                    public String defaultSyntax(boolean infix) { 
+                        return infix ? op.getInfixSyntax() : op.getPrefixSyntax(); 
+                    }
+                    @Override 
+                    public List<ExpressionType> getExpressionResultTypes() {
+                        List<ExpressionType> result = new ArrayList<>();
+                        result.add(t);
+                        return result;
+                    }
+                    @Override
+                    public ExpressionOperator getOperator() {
+                        return op;
+                    }
+                };
+                textBox.insertNodeAtCursor(dn);
                 //nameField.setText(e.getName());
             }
         });
@@ -216,15 +243,14 @@ public class ExpressionNodeExplorer {
         }
     }
 
-    private void handleNodeInsertion(ExpressionNodeRegistry.NodeDescriptor descriptor) {
+    private void handleNodeInsertion(DisplayNode descriptor) {
         try {
-            ExpressionNode newNode = instantiateDescriptor(descriptor);
-            textBox.insertNodeAtCursor(newNode);
+            textBox.insertNodeAtCursor(descriptor);
         } catch (Exception e) {
             // Fallback: insert the default syntax string directly.
             // This keeps the UI resilient even when constructor reflection fails.
             try {
-                String fallbackSyntax = descriptor.getDefaultSyntax(false);
+                String fallbackSyntax = descriptor.defaultSyntax(false);
                 if (fallbackSyntax != null && !fallbackSyntax.isEmpty()) {
                     textBox.insertTextAtCursor(fallbackSyntax);
                     return;
@@ -274,52 +300,8 @@ public class ExpressionNodeExplorer {
         return evalMethod.invoke(node);
     }
 
-    private ExpressionNode instantiateDescriptor(ExpressionNodeRegistry.NodeDescriptor descriptor) throws Exception {
-        Class<?> clazz = descriptor.getClazz();
-        int arity = descriptor.getArity();
 
-        ExpressionNode dummyDouble = createDummyLeaf(Double.class);
-        ExpressionNode dummyBool = createDummyLeaf(Boolean.class);
 
-        return switch (arity) {
-            case 0 -> {
-                try { yield (ExpressionNode) clazz.getConstructor().newInstance(); }
-                catch (NoSuchMethodException e) { yield (ExpressionNode) clazz.getConstructor(String.class).newInstance("dummy"); }
-            }
-            case 1 -> {
-                Constructor<?> ctor = clazz.getDeclaredConstructor(ExpressionNode.class);
-                yield (ExpressionNode) ctor.newInstance(dummyDouble);
-            }
-            case 2 -> {
-                Constructor<?> ctor = clazz.getDeclaredConstructor(ExpressionNode.class, ExpressionNode.class);
-                yield (ExpressionNode) ctor.newInstance(dummyDouble, dummyDouble);
-            }
-            case 3 -> {
-                Constructor<?> ctor = clazz.getDeclaredConstructor(
-                        BooleanExpressionNode.class, ExpressionNode.class, ExpressionNode.class);
-                yield (ExpressionNode) ctor.newInstance((BooleanExpressionNode) dummyBool, dummyDouble, dummyDouble);
-            }
-            default -> throw new IllegalStateException("Unsupported arity: " + arity);
-        };
-    }
-
-    @SuppressWarnings("unchecked")
-    private ExpressionNode createDummyLeaf(Class<?> type) throws Exception {
-        Class<?> leafClass;
-        Object value;
-        if (type == Boolean.class || type == boolean.class) {
-            leafClass = Class.forName("usace.hec.expressions.BooleanConstantNode");
-            value = false;
-        } else if (type == String.class) {
-            leafClass = Class.forName("usace.hec.expressions.StringConstantNode");
-            value = "";
-        } else {
-            leafClass = Class.forName("usace.hec.expressions.DoubleConstantNode");
-            value = 0.0;
-        }
-        Constructor<?> ctor = leafClass.getDeclaredConstructor(type.isPrimitive() ? type : type.asSubclass(Object.class));
-        return (ExpressionNode) ctor.newInstance(value);
-    }
 
     private void handleError(Exception e, String context) {
         String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();

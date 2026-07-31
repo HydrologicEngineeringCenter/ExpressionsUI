@@ -1,8 +1,6 @@
 package expression.builder;
 
-import org.apache.commons.math3.analysis.function.Exp;
 import usace.hec.expressions.ExpressionNode;
-import usace.hec.expressions.ExpressionParser;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;

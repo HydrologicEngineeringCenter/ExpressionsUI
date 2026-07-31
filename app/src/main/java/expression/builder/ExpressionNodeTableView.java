@@ -8,11 +8,13 @@ import javax.swing.event.DocumentListener;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 
+import usace.hec.expressions.DisplayNode;
+
 public class ExpressionNodeTableView extends JPanel {
     private final ExpressionNodeTableModel model;
     private final TableRowSorter<ExpressionNodeTableModel> sorter;
 
-    public ExpressionNodeTableView(List<ExpressionNodeRegistry.NodeDescriptor> nodes) {
+    public ExpressionNodeTableView(List<DisplayNode> nodes) {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createTitledBorder("Node Table"));
 
@@ -25,7 +27,7 @@ public class ExpressionNodeTableView extends JPanel {
         table.getColumnModel().getColumn(2).setPreferredWidth(100);
         table.getColumnModel().getColumn(3).setPreferredWidth(100);
         table.getColumnModel().getColumn(4).setPreferredWidth(60);
-        table.getColumnModel().getColumn(5).setPreferredWidth(150);
+        //table.getColumnModel().getColumn(5).setPreferredWidth(150);
 
         sorter = new TableRowSorter<>(model);
         table.setRowSorter(sorter);
@@ -83,10 +85,10 @@ public class ExpressionNodeTableView extends JPanel {
     }
 
     static class ExpressionNodeTableModel extends AbstractTableModel {
-        private final List<ExpressionNodeRegistry.NodeDescriptor> data;
-        private final String[] columns = {"Category", "Class", "Operator", "Infix", "Arity", "Syntax"};
+        private final List<DisplayNode> data;
+        private final String[] columns = {"Category", "Operator", "Infix", "Arity", "Syntax"};
 
-        ExpressionNodeTableModel(List<ExpressionNodeRegistry.NodeDescriptor> data) { this.data = data; }
+        ExpressionNodeTableModel(List<DisplayNode> data) { this.data = data; }
 
         @Override public int getRowCount() { return data.size(); }
         @Override public int getColumnCount() { return columns.length; }
@@ -94,14 +96,13 @@ public class ExpressionNodeTableView extends JPanel {
 
         @Override
         public Object getValueAt(int row, int col) {
-            ExpressionNodeRegistry.NodeDescriptor d = data.get(row);
+            DisplayNode d = data.get(row);
             return switch (col) {
-                case 0 -> d.getCategory();
-                case 1 -> d.getSimpleName();
-                case 2 -> d.getDisplayName();
-                case 3 -> d.getDisplayNameInfix();
-                case 4 -> d.getArity();
-                case 5 -> d.getDefaultSyntax(false);
+                case 0 -> d.category();
+                case 1 -> d.displayName(false);
+                case 2 ->  d.displayName(true);
+                case 3 -> d.getOperator().getArity();
+                case 4 -> d.defaultSyntax(false);
                 default -> "";
             };
         }
