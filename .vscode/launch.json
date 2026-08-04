@@ -9,15 +9,6 @@
             "env": {
                 "DISPLAY": ":1"
             }
-        },
-        {
-            "type": "java",
-            "name": "Run Expression Wizard",
-            "request": "launch",
-            "mainClass": "expression.builder.App",
-            "env": {
-                "DISPLAY": ":1"
-            }
         }
     ]
 }

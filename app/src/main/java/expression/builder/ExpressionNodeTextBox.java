@@ -74,14 +74,6 @@ public class ExpressionNodeTextBox extends JPanel {
         if (text == null || text.isEmpty()) return;
         isProgrammaticUpdate = true;
         int caretPos = textArea.getCaretPosition();
-        String existing = textArea.getText();
-        
-        if (caretPos > 0 && !existing.isEmpty()) {
-            char prevChar = existing.charAt(caretPos - 1);
-            if (!Character.isWhitespace(prevChar)) {
-                text = " " + text;
-            }
-        }
         
         textArea.replaceRange(text, caretPos, caretPos);
         textArea.setCaretPosition(caretPos + text.length());
