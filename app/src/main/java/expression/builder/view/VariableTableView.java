@@ -1,17 +1,15 @@
-package expression.builder;
+package expression.builder.view;
 
-import usace.hec.expressions.ExpressionNode;
+import expression.builder.model.ExpressionEntry;
+import expression.builder.model.VariableTableModel;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.AbstractTableModel;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.io.Serial;
-import java.io.Serializable;
 import java.util.List;
 
 public class VariableTableView extends JPanel {
@@ -122,103 +120,5 @@ public class VariableTableView extends JPanel {
     public void editEntry(int index, ExpressionEntry entry) {
         model.getData().set(index, entry);
         refresh();
-    }
-
-
-    public static class VariableTableModel extends AbstractTableModel{
-        private final List<ExpressionEntry> data;
-
-        public VariableTableModel(List<ExpressionEntry> data){
-            this.data = data;
-        }
-
-        private final String[] columns = {"Index", "Name", "Expression", "Default Value"};
-
-        @Override
-        public int getRowCount() {
-            return data.size();
-        }
-
-        @Override
-        public int getColumnCount() {
-            return columns.length;
-        }
-
-        @Override
-        public String getColumnName(int col) {
-            return columns[col];
-        }
-
-        @Override
-        public Object getValueAt(int rowIndex, int columnIndex) {
-            ExpressionEntry d = data.get(rowIndex);
-            return switch(columnIndex) {
-                case 0 -> rowIndex;
-                case 1 -> d.getName();
-                case 2 -> d.getExpression();
-                case 3 -> d.getDefaultValue();
-                default -> "";
-            };
-        }
-
-        public List<ExpressionEntry> getData(){
-            return this.data;
-        }
-
-        public void addData(ExpressionEntry newExp) {
-            data.add(newExp);
-        }
-    }
-
-    public static class ExpressionEntry implements Serializable {
-
-        @Serial
-        private static final long serialVersionUID = 2L;
-
-        private String name;
-        private ExpressionNode expressionNode;
-        private String expression;
-        private Object defaultValue;
-
-        /**
-         * Creates an ExpressionEntry which contains a row index, a name to refer to at compute time, the {@link ExpressionNode} itself, and a comment the user would like to add.
-         * @param name
-         * @param expressionNode
-         * @param expression
-         */
-        public ExpressionEntry(String name, String expression, ExpressionNode expressionNode, Object defaultValue){
-            this.name = name;
-            this.expression = expression;
-            this.expressionNode = expressionNode;
-            this.defaultValue = defaultValue;
-        }
-
-        public String getName() {
-            return name;
-        }
-
-        public void setName(String name) {
-            this.name = name;
-        }
-
-        public ExpressionNode getExpressionNode() {
-            return expressionNode;
-        }
-
-        public void setExpressionNode(ExpressionNode expressionNode) {
-            this.expressionNode = expressionNode;
-        }
-
-        public String getExpression() {
-            return expression;
-        }
-
-        public Object getDefaultValue() {
-            return defaultValue;
-        }
-
-        public void setExpression(String expression) {
-            this.expression = expression;
-        }
     }
 }
