@@ -18,8 +18,8 @@ public class DataBase {
     }
 
     //when adding new rows, calls this function to expand the list and to add a new row to the table.
-    public void addExpression(int index, ExpressionEntry expression){
-        expressions.add(index, expression);
+    public void addExpression(ExpressionEntry expression){
+        expressions.add(expression);
     }
 
     //when editing rows, change the entry in the row accordingly
@@ -29,17 +29,12 @@ public class DataBase {
 
     //restore saved entries list after application has closed.
     public void setExpressions(List<ExpressionEntry> entries){
-        expressions = new ArrayList();
+        expressions = new ArrayList<>();
         if (entries == null || entries.isEmpty())
         {
             return;
         }
         expressions.addAll(entries);
-    }
-
-    //retrive the expression at the index
-    public ExpressionEntry getExpressionEntry(int index){
-        return expressions.get(index);
     }
 
     //popup menu to remove rows in the table model

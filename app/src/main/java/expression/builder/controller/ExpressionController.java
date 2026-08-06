@@ -36,35 +36,12 @@ public class ExpressionController {
 
     public void putExpression(EditEvent ev){
         int index = db.findName(ev.getName());
-        if (index != -1){
-            updateExpression(index, ev);
-        } else{
-            addExpression(ev);
-        }
-    }
-
-    /**
-     * Panels use this method to add rows to the DataBase, indices update accordingly.
-     * @param ev
-     */
-    private void addExpression(EditEvent ev){
-        int index = ev.getIndex();
-        String name = ev.getName();
-        ExpressionNode expressionNode = ev.getExpression();
-        String expressionSyntax = ev.getExpressionString();
-        Object defaultValue = ev.getDefaultValue();
-
-        ExpressionEntry expressionEntry = new ExpressionEntry(name, expressionSyntax, expressionNode, defaultValue);
-        db.addExpression(index, expressionEntry);
-    }
-
-    /**
-     * Update row entires with this method.
-     * @param ev
-     */
-    private void updateExpression(int index, EditEvent ev) {
         ExpressionEntry entry = new ExpressionEntry(ev.getName(), ev.getExpressionString(), ev.getExpression(), ev.getDefaultValue());
-        db.setExpression(index, entry);
+        if (index != -1){
+            db.setExpression(index, entry);
+        } else{
+            db.addExpression(entry);
+        }
     }
 
     /**

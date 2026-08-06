@@ -6,6 +6,9 @@ import usace.hec.expressions.DisplayNodeProvider;
 import usace.hec.expressions.ExpressionOperator;
 import usace.hec.expressions.ExpressionType;
 
+import expression.builder.controller.*;
+import expression.builder.view.*;
+
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -26,7 +29,7 @@ public class ExpressionNodeRegistry {
         return coreRegistry.getDisplayNodes().stream()
                 .sorted(java.util.Comparator.comparing(DisplayNode::category)
                         .thenComparing(n -> n.displayName(false)))
-                .collect(Collectors.toList());
+                .collect(Collectors.toExpressionEntry);
     }
 
     /**
