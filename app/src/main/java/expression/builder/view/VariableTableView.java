@@ -98,14 +98,6 @@ public class VariableTableView extends JPanel {
         return this.model;
     }
 
-    public void saveExpression(ExpressionEntry newExp) {
-        if (listener != null) {
-            EditEvent ev = new EditEvent(this, newExp.getName(), newExp.getExpressionNode(), newExp.getExpression(), newExp.getDefaultValue());
-            listener.rowAddedorEditRequested(ev);
-            refresh();
-        }
-    }
-
     public void setData(List<ExpressionEntry> data){
         model.setData(data);
         sorter = new TableRowSorter<>(model);

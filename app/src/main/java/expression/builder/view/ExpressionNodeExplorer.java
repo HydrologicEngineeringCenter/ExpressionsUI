@@ -11,8 +11,6 @@ import expression.builder.model.ExpressionEntry;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.List;
 
 public class ExpressionNodeExplorer {
@@ -135,13 +133,13 @@ public class ExpressionNodeExplorer {
                     String expression = textBox.getExpression();
                     String defaultValField = defaultValueField.getText();
                     double doubleVal = 0;
-                    try {doubleVal = Double.parseDouble(defaultValueField.getText());
+                    try {doubleVal = Double.parseDouble(defaultValField);
                     } catch (Exception ignored){
                         //Nothing happens if parseDouble is null
                     }
                     if (!expression.isEmpty() && !updatableCheck.isSelected()) {
                         try {
-                            ExpressionNode expNode = parseExpression(expression);
+                            ExpressionNode expNode = expressionController.parseExpression(expression);
                             newExp = new ExpressionEntry(name, expression, expNode,0.0);
                         } catch (Exception ignored) {
                             return;
@@ -150,7 +148,9 @@ public class ExpressionNodeExplorer {
                         ExpressionNode updatable = new UpdateableLeafNode(name);
                         newExp = new ExpressionEntry(name, "[" + name + "]", updatable, doubleVal);
                     }
-                    variableView.saveExpression(newExp);
+                    EditEvent ev = new EditEvent(this, newExp.getName(), newExp.getExpressionNode(), newExp.getExpression(), newExp.getDefaultValue());
+                    expressionController.putExpression(ev);
+                    variableView.refresh();
                     return;
                 }
                 return;
@@ -240,7 +240,7 @@ public class ExpressionNodeExplorer {
     private void handleTextUpdate(String text) {
         try {
             if (!text.isEmpty()) {
-                currentExpression = parseExpression(text);
+                currentExpression = expressionController.parseExpression(text);
             } else {
                 currentExpression = null;
             }
@@ -269,24 +269,6 @@ public class ExpressionNodeExplorer {
         }
     }
 
-    private ExpressionNode parseExpression(String text) throws Exception {
-        ExpressionParser parser = new ExpressionParser();
-        ParseResult result = parser.parse(text);
-        List<ExpressionEntry> data = expressionController.getExpressions();
-        DataHub dh = new DataHub();
-        for(ExpressionEntry e:data){
-            if(e.getExpressionNode() instanceof DataRequester){
-                dh.setValue(((DataRequester)e.getExpressionNode()).getName(), e.getDefaultValue());
-            }
-        }
-        if (result.isSuccess()) {
-            ExpressionNode node = (ExpressionNode)result.getNode();
-            node.setProvider(dh);
-            return node;
-        }
-        throw new IllegalArgumentException(result.getError() + " at position " + result.getError().position());
-    }
-
     private void updateEvaluationLabel() {
         if (currentExpression == null) {
             evaluationLabel.setText("Evaluation: N/A");
@@ -294,17 +276,12 @@ public class ExpressionNodeExplorer {
             return;
         }
         try {
-            Object result = evaluateSafely(currentExpression);
+            Object result = expressionController.evaluateSafely(currentExpression);
             evaluationLabel.setText("Evaluation: " + (result != null ? result : "null"));
             evaluationLabel.setForeground(new Color(0x4C, 0xAF, 0x50));
         } catch (Exception e) {
             handleError(e, "Evaluation Error");
         }
-    }
-
-    private Object evaluateSafely(ExpressionNode node) throws Exception {
-        Method evalMethod = node.getClass().getMethod("evaluate");
-        return evalMethod.invoke(node);
     }
 
 

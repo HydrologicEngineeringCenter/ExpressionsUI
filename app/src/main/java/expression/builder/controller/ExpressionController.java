@@ -1,11 +1,12 @@
 package expression.builder.controller;
 
+import java.lang.reflect.Method;
 import java.util.List;
 
 import expression.builder.model.DataBase;
 import expression.builder.model.ExpressionEntry;
 import expression.builder.view.EditEvent;
-import usace.hec.expressions.ExpressionNode;
+import usace.hec.expressions.*;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -48,9 +49,33 @@ public class ExpressionController {
      * On compute time, create a {@link Map} that maps each expression entry's name to the {@link ExpressionNode} to allow for any ExpressionNode to refer to other ExpressionNode's by name.
      * @return
      */
+    //TODO: implementation currently does not use map the last entry to use it to return finalized value. Allow users to choose variable to return later
     public Map<String, ExpressionNode> getExpressionNodesByName() {
         List<ExpressionEntry> myList = db.getExpressions();
         return db.getExpressions().stream().limit(myList.size() - 1)
                 .collect(Collectors.toMap(entry -> entry.getName(), entry-> entry.getExpressionNode()));
+    }
+
+    public ExpressionNode parseExpression(String text) throws Exception {
+        ExpressionParser parser = new ExpressionParser();
+        ParseResult result = parser.parse(text);
+        List<ExpressionEntry> data = getExpressions();
+        DataHub dh = new DataHub();
+        for(ExpressionEntry e:data){
+            if(e.getExpressionNode() instanceof DataRequester){
+                dh.setValue(((DataRequester)e.getExpressionNode()).getName(), e.getDefaultValue());
+            }
+        }
+        if (result.isSuccess()) {
+            ExpressionNode node = (ExpressionNode)result.getNode();
+            node.setProvider(dh);
+            return node;
+        }
+        throw new IllegalArgumentException(result.getError() + " at position " + result.getError().position());
+    }
+
+    public Object evaluateSafely(ExpressionNode node) throws Exception {
+        Method evalMethod = node.getClass().getMethod("evaluate");
+        return evalMethod.invoke(node);
     }
 }

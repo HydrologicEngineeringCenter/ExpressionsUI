@@ -32,18 +32,9 @@ public class ExpressionEntry implements Serializable {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
     public ExpressionNode getExpressionNode() {
         return expressionNode;
     }
-
-    public void setExpressionNode(ExpressionNode expressionNode) {
-        this.expressionNode = expressionNode;
-    }
-
     public String getExpression() {
         return expression;
     }
@@ -52,7 +43,4 @@ public class ExpressionEntry implements Serializable {
         return defaultValue;
     }
 
-    public void setExpression(String expression) {
-        this.expression = expression;
-    }
 }

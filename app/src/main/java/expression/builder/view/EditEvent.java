@@ -1,6 +1,5 @@
 package expression.builder.view;
 
-import expression.builder.model.ExpressionEntry;
 import usace.hec.expressions.ExpressionNode;
 
 import java.util.EventObject;
@@ -23,7 +22,7 @@ public class EditEvent extends EventObject {
     }
 
     /**
-     * EventObject created to populate entries of {@link ExpressionEntry} when an edit event has occured (e.g. creating a new row, editing a new row);
+     * EventObject created to populate entries of {@link expression.builder.model.ExpressionEntry} when an edit event has occured (e.g. creating a new row, editing a new row);
      * @param source
      * @param name
      * @param expression

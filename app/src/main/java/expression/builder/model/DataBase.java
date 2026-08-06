@@ -1,13 +1,12 @@
 package expression.builder.model;
 
-import expression.builder.controller.ExpressionController;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 /**
  * Stores a List of {@link ExpressionEntry}s as the backend for the {@link VariableTableModel in the expressions tab. This DataBase can
- * only be updated through {@link ExpressionController}, as it passes in an immutable List to other panels that want to
+ * only be updated through {@link expression.builder.controller.ExpressionController}, as it passes in an immutable List to other panels that want to
  * access its contents.
  */
 public class DataBase {
@@ -43,7 +42,7 @@ public class DataBase {
     }
 
     /**
-     * allows other Panels to access the array but not modify them, all components will have to use {@link ExpressionController}
+     * allows other Panels to access the array but not modify them, all components will have to use {@link expression.builder.controller.ExpressionController}
      * to modify DataBase
      */
     public List<ExpressionEntry> getExpressions(){
