@@ -83,37 +83,33 @@ public class ExpressionNodeExplorer {
             public void getExpression(int row) {
                 //textBox.setNodeText(e.getExpressionNode());
                 ExpressionEntry e = expressionController.getExpressions().get(row);
-                ExpressionOperator op = e.getExpressionNode().Operator();
-                ExpressionType t = e.getExpressionNode().resultType();
-                DisplayNode dn = new DisplayNode() {
-                    @Override 
-                    public String displayName(boolean infix) { 
-                        return infix ? op.getInfixName() : op.getPrefixName(); 
-                    }
-                    @Override 
-                    public String category() { 
-                        return op.getCategory(); 
-                    }
-                    @Override 
-                    public String defaultSyntax(boolean infix) { 
-                        return infix ? op.getInfixSyntax() : op.getPrefixSyntax(); 
-                    }
-                    @Override 
-                    public List<ExpressionType> getExpressionResultTypes() {
-                        List<ExpressionType> result = new ArrayList<>();
-                        result.add(t);
-                        return result;
-                    }
-                    @Override
-                    public ExpressionOperator getOperator() {
-                        return op;
-                    }
-                };
-                if (op == ExpressionOperator.VARIABLE){
-                    textBox.insertVariableAtCursor(e.getExpressionNode());
-                } else {
-                    textBox.insertNodeAtCursor(dn);
-                }
+//                ExpressionOperator op = e.getExpressionNode().Operator();
+//                ExpressionType t = e.getExpressionNode().resultType();
+//                DisplayNode dn = new DisplayNode() {
+//                    @Override
+//                    public String displayName(boolean infix) {
+//                        return infix ? op.getInfixName() : op.getPrefixName();
+//                    }
+//                    @Override
+//                    public String category() {
+//                        return op.getCategory();
+//                    }
+//                    @Override
+//                    public String defaultSyntax(boolean infix) {
+//                        return infix ? op.getInfixSyntax() : op.getPrefixSyntax();
+//                    }
+//                    @Override
+//                    public List<ExpressionType> getExpressionResultTypes() {
+//                        List<ExpressionType> result = new ArrayList<>();
+//                        result.add(t);
+//                        return result;
+//                    }
+//                    @Override
+//                    public ExpressionOperator getOperator() {
+//                        return op;
+//                    }
+//                };
+                textBox.insertVariableAtCursor(e);
                 //nameField.setText(e.getName());
             }
 
@@ -137,8 +133,9 @@ public class ExpressionNodeExplorer {
                     ExpressionEntry newExp;
                     String name = nameField.getText();
                     String expression = textBox.getExpression();
-                    String defaultVal = defaultValueField.getText();
-                    try {double doubleVal = Double.parseDouble(defaultValueField.getText());
+                    String defaultValField = defaultValueField.getText();
+                    double doubleVal = 0;
+                    try {doubleVal = Double.parseDouble(defaultValueField.getText());
                     } catch (Exception ignored){
                         //Nothing happens if parseDouble is null
                     }
@@ -151,7 +148,7 @@ public class ExpressionNodeExplorer {
                         }
                     } else {
                         ExpressionNode updatable = new UpdateableLeafNode(name);
-                        newExp = new ExpressionEntry(name, "[" + name + "]", updatable, defaultVal);
+                        newExp = new ExpressionEntry(name, "[" + name + "]", updatable, doubleVal);
                     }
                     variableView.saveExpression(newExp);
                     return;

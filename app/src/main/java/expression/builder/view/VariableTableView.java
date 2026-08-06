@@ -17,7 +17,7 @@ import java.util.List;
 public class VariableTableView extends JPanel {
     private JTable table;
     private final VariableTableModel model;
-    private final TableRowSorter<VariableTableModel> sorter;
+    private TableRowSorter<VariableTableModel> sorter;
     private JPopupMenu popup;
     private VariableTableListener listener;
 
@@ -28,8 +28,6 @@ public class VariableTableView extends JPanel {
         table = new JTable(model);
         popup = new JPopupMenu();
 
-        JMenuItem addItem = new JMenuItem("Add row");
-        popup.add(addItem);
         JMenuItem removeItem = new JMenuItem("Remove row");
         popup.add(removeItem);
 
@@ -48,7 +46,7 @@ public class VariableTableView extends JPanel {
         });
 
         //removes row from table
-        addItem.addActionListener(new ActionListener() {
+        removeItem.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 int row = table.getSelectedRow();
@@ -59,60 +57,19 @@ public class VariableTableView extends JPanel {
             }
         });
 
-
-        sorter = new TableRowSorter<>(model);
-        table.setRowSorter(sorter);
-
-        JTextField searchField = new JTextField(20);
-        setupPrompt(searchField, "Find a variable...");
-
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int row = table.rowAtPoint(e.getPoint());
+            int row = table.rowAtPoint(e.getPoint());
 
-                table.getSelectionModel().setSelectionInterval(row, row);
+            table.getSelectionModel().setSelectionInterval(row, row);
 
-                if(e.getButton() == MouseEvent.BUTTON1 && listener!=null){
-                    listener.getExpression(row);
-                }
+            if(e.getButton() == MouseEvent.BUTTON1 && listener!=null){
+                listener.getExpression(row);
+            }
             }
         });
 
-
-        searchField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override public void insertUpdate(DocumentEvent e) { applyFilter(); }
-            @Override public void removeUpdate(DocumentEvent e) { applyFilter(); }
-            @Override public void changedUpdate(DocumentEvent e) { applyFilter(); }
-
-            private void applyFilter() {
-                String text = searchField.getText();
-                if (text.isEmpty() || text.equals("Find a variable...")) {
-                    sorter.setRowFilter(null);
-                } else {
-                    String lower = text.toLowerCase();
-                    sorter.setRowFilter(new RowFilter<VariableTableModel, Integer>() {
-                        @Override
-                        public boolean include(Entry entry) {
-                            int row = (int)entry.getIdentifier();
-                            for (int i = 0; i < model.getColumnCount(); i++) {
-                                if (String.valueOf(model.getValueAt(row, i)).toLowerCase().contains(lower)) {
-                                    return true;
-                                }
-                            }
-                            return false;
-                        }
-                    });
-                }
-            }
-        });
-
-        JPanel controls = new JPanel(new BorderLayout(10, 5));
-        controls.setBorder(BorderFactory.createEmptyBorder(8, 8, 4, 8));
-        controls.add(new JLabel("ExpressionNode Explorer"), BorderLayout.WEST);
-        controls.add(searchField, BorderLayout.CENTER);
-
-        add(controls, BorderLayout.NORTH);
         add(new JScrollPane(table), BorderLayout.CENTER);
     }
 
@@ -151,5 +108,44 @@ public class VariableTableView extends JPanel {
 
     public void setData(List<ExpressionEntry> data){
         model.setData(data);
+        sorter = new TableRowSorter<>(model);
+        table.setRowSorter(sorter);
+
+        JTextField searchField = new JTextField(20);
+        setupPrompt(searchField, "Find a variable...");
+
+        searchField.getDocument().addDocumentListener(new DocumentListener() {
+            @Override public void insertUpdate(DocumentEvent e) { applyFilter(); }
+            @Override public void removeUpdate(DocumentEvent e) { applyFilter(); }
+            @Override public void changedUpdate(DocumentEvent e) { applyFilter(); }
+
+            private void applyFilter() {
+                String text = searchField.getText();
+                if (text.isEmpty() || text.equals("Find a variable...")) {
+                    sorter.setRowFilter(null);
+                } else {
+                    String lower = text.toLowerCase();
+                    sorter.setRowFilter(new RowFilter<VariableTableModel, Integer>() {
+                        @Override
+                        public boolean include(Entry entry) {
+                            int row = (int)entry.getIdentifier();
+                            for (int i = 0; i < model.getColumnCount(); i++) {
+                                if (String.valueOf(model.getValueAt(row, i)).toLowerCase().contains(lower)) {
+                                    return true;
+                                }
+                            }
+                            return false;
+                        }
+                    });
+                }
+            }
+        });
+
+        JPanel controls = new JPanel(new BorderLayout(10, 5));
+        controls.setBorder(BorderFactory.createEmptyBorder(8, 8, 4, 8));
+        controls.add(new JLabel("ExpressionNode Explorer"), BorderLayout.WEST);
+        controls.add(searchField, BorderLayout.CENTER);
+
+        add(controls, BorderLayout.NORTH);
     }
 }

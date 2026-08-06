@@ -29,7 +29,7 @@ public class ExpressionNodeRegistry {
         return coreRegistry.getDisplayNodes().stream()
                 .sorted(java.util.Comparator.comparing(DisplayNode::category)
                         .thenComparing(n -> n.displayName(false)))
-                .collect(Collectors.toExpressionEntry);
+                .collect(Collectors.toList());
     }
 
     /**

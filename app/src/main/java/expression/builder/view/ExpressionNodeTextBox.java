@@ -6,6 +6,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import expression.builder.model.ExpressionEntry;
 import usace.hec.expressions.DisplayNode;
 import usace.hec.expressions.ExpressionNode;
 
@@ -67,9 +68,14 @@ public class ExpressionNodeTextBox extends JPanel {
         insertTextAtCursor(syntax);
     }
 
-    public void insertVariableAtCursor(ExpressionNode variable) {
+    public void insertExpressionAtCursor(ExpressionNode variable) {
         if (variable == null) return;
         insertTextAtCursor(variable.PreFixSyntax());
+    }
+
+    public void insertVariableAtCursor(ExpressionEntry e){
+        if (e == null) return;
+        insertTextAtCursor("[" + e.getName() + "]");
     }
 
     /**
