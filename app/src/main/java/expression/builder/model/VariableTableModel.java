@@ -4,7 +4,9 @@ import javax.swing.table.AbstractTableModel;
 import java.util.List;
 
 public class VariableTableModel extends AbstractTableModel {
-    private final List<ExpressionEntry> data;
+    private List<ExpressionEntry> data;
+
+    public VariableTableModel(){};
 
     public VariableTableModel(List<ExpressionEntry> data){
         this.data = data;
@@ -27,6 +29,10 @@ public class VariableTableModel extends AbstractTableModel {
         return columns[col];
     }
 
+    public void setData(List<ExpressionEntry> data){
+        this.data = data;
+    }
+
     @Override
     public Object getValueAt(int rowIndex, int columnIndex) {
         ExpressionEntry d = data.get(rowIndex);
@@ -35,15 +41,7 @@ public class VariableTableModel extends AbstractTableModel {
             case 1 -> d.getName();
             case 2 -> d.getExpression();
             case 3 -> d.getDefaultValue();
-            default -> "";
+            default -> null;
         };
-    }
-
-    public List<ExpressionEntry> getData(){
-        return this.data;
-    }
-
-    public void addData(ExpressionEntry newExp) {
-        data.add(newExp);
     }
 }

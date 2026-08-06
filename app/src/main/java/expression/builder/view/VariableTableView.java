@@ -8,20 +8,57 @@ import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
 
 public class VariableTableView extends JPanel {
+    private JTable table;
     private final VariableTableModel model;
     private final TableRowSorter<VariableTableModel> sorter;
+    private JPopupMenu popup;
     private VariableTableListener listener;
 
-    public VariableTableView(List<ExpressionEntry> variables){
+    public VariableTableView(){
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createTitledBorder("Variable Table"));
-        model = new VariableTableModel(variables);
-        JTable table = new JTable(model);
+        model = new VariableTableModel();
+        table = new JTable(model);
+        popup = new JPopupMenu();
+
+        JMenuItem addItem = new JMenuItem("Add row");
+        popup.add(addItem);
+        JMenuItem removeItem = new JMenuItem("Remove row");
+        popup.add(removeItem);
+
+        //popup appears when right clicking
+        table.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                int row = table.rowAtPoint(e.getPoint());
+
+                table.getSelectionModel().setSelectionInterval(row, row);
+
+                if(e.getButton() == MouseEvent.BUTTON3){
+                    popup.show(table, e.getX(),e.getY());
+                }
+            }
+        });
+
+        //removes row from table
+        addItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int row = table.getSelectedRow();
+
+                if (listener!=null){
+                    listener.rowDeleted(row);
+                }
+            }
+        });
+
 
         sorter = new TableRowSorter<>(model);
         table.setRowSorter(sorter);
@@ -37,7 +74,7 @@ public class VariableTableView extends JPanel {
                 table.getSelectionModel().setSelectionInterval(row, row);
 
                 if(e.getButton() == MouseEvent.BUTTON1 && listener!=null){
-                    listener.getExpression(model.getData().get(row));
+                    listener.getExpression(row);
                 }
             }
         });
@@ -96,29 +133,23 @@ public class VariableTableView extends JPanel {
     public void setVariableTableListener(VariableTableListener listener){
         this.listener = listener;
     }
-    public void refresh(){model.fireTableDataChanged();}
+    public void refresh(){
+        model.fireTableDataChanged();
+    }
 
     public VariableTableModel getModel(){
         return this.model;
     }
 
-    public void addExpression(ExpressionEntry newExp) {
-        model.addData(newExp);
-        refresh();
-    }
-
-    public int expressionExists(String name) {
-        List<ExpressionEntry> data = model.getData();
-        for (int i = 0; i < data.size(); i++){
-            if (name.equals(data.get(i).getName())){
-                return i;
-            }
+    public void saveExpression(ExpressionEntry newExp) {
+        if (listener != null) {
+            EditEvent ev = new EditEvent(this, newExp.getName(), newExp.getExpressionNode(), newExp.getExpression(), newExp.getDefaultValue());
+            listener.rowAddedorEditRequested(ev);
+            refresh();
         }
-        return -1;
     }
 
-    public void editEntry(int index, ExpressionEntry entry) {
-        model.getData().set(index, entry);
-        refresh();
+    public void setData(List<ExpressionEntry> data){
+        model.setData(data);
     }
 }

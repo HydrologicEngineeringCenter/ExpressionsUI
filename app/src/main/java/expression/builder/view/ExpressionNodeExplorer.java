@@ -1,5 +1,6 @@
 package expression.builder.view;
 
+import expression.builder.controller.ExpressionController;
 import expression.builder.model.ExpressionNodeRegistry;
 import usace.hec.expressions.*;
 
@@ -19,6 +20,7 @@ public class ExpressionNodeExplorer {
     private ExpressionNodeTextBox textBox;
     private JLabel evaluationLabel;
     private VariableTableView variableView;
+    private ExpressionController expressionController;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -30,8 +32,6 @@ public class ExpressionNodeExplorer {
 
     private void createAndShowGUI() {
         List<DisplayNode> nodes = ExpressionNodeRegistry.getAllNodes();
-        List<ExpressionEntry> variables = new ArrayList<>();
-        variables.add(new ExpressionEntry("hi","[hi]", new UpdateableLeafNode("hi"),10.0));
 
         JFrame frame = new JFrame("HEC Expression Builder");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -49,10 +49,14 @@ public class ExpressionNodeExplorer {
 
         tabbedPane.add("Node Table", tableView);
 
-        variableView = new VariableTableView(variables);
+        variableView = new VariableTableView();
 
 
         tabbedPane.add("Variable Table", variableView);
+
+        expressionController = new ExpressionController();
+
+        variableView.setData(expressionController.getExpressions());
 
         JPanel expressionPanel = new JPanel(new BorderLayout());
         expressionPanel.add(textBox, BorderLayout.CENTER);
@@ -76,9 +80,9 @@ public class ExpressionNodeExplorer {
 
         variableView.setVariableTableListener(new VariableTableListener() {
             @Override
-            public void getExpression(ExpressionEntry e) {
+            public void getExpression(int row) {
                 //textBox.setNodeText(e.getExpressionNode());
-
+                ExpressionEntry e = expressionController.getExpressions().get(row);
                 ExpressionOperator op = e.getExpressionNode().Operator();
                 ExpressionType t = e.getExpressionNode().resultType();
                 DisplayNode dn = new DisplayNode() {
@@ -112,12 +116,25 @@ public class ExpressionNodeExplorer {
                 }
                 //nameField.setText(e.getName());
             }
+
+            @Override
+            public void rowDeleted(int row) {
+                expressionController.removeExpression(row);
+                variableView.refresh();
+            }
+
+            @Override
+            public void rowAddedorEditRequested(EditEvent ev) {
+                expressionController.putExpression(ev);
+                variableView.refresh();
+            }
         });
 
         saveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 if (!nameField.getText().isEmpty()){
+                    ExpressionEntry newExp;
                     String name = nameField.getText();
                     String expression = textBox.getExpression();
                     String defaultVal = defaultValueField.getText();
@@ -128,26 +145,15 @@ public class ExpressionNodeExplorer {
                     if (!expression.isEmpty() && !updatableCheck.isSelected()) {
                         try {
                             ExpressionNode expNode = parseExpression(expression);
-                            ExpressionEntry newExp = new ExpressionEntry(name, expression, expNode,0);
-                            int index = variableView.expressionExists(name);
-                            if (index != -1) {
-                                variableView.editEntry(index, newExp);
-                            } else {
-                                variableView.addExpression(newExp);
-                            }
+                            newExp = new ExpressionEntry(name, expression, expNode,0.0);
                         } catch (Exception ignored) {
                             return;
                         }
                     } else {
                         ExpressionNode updatable = new UpdateableLeafNode(name);
-                        ExpressionEntry newExp = new ExpressionEntry(name, "[" + name + "]", updatable, defaultVal);
-                        int index = variableView.expressionExists(name);
-                        if (index != -1) {
-                            variableView.editEntry(index, newExp);
-                        } else {
-                            variableView.addExpression(newExp);
-                        }
+                        newExp = new ExpressionEntry(name, "[" + name + "]", updatable, defaultVal);
                     }
+                    variableView.saveExpression(newExp);
                     return;
                 }
                 return;
@@ -269,7 +275,7 @@ public class ExpressionNodeExplorer {
     private ExpressionNode parseExpression(String text) throws Exception {
         ExpressionParser parser = new ExpressionParser();
         ParseResult result = parser.parse(text);
-        List<ExpressionEntry> data = variableView.getModel().getData();
+        List<ExpressionEntry> data = expressionController.getExpressions();
         DataHub dh = new DataHub();
         for(ExpressionEntry e:data){
             if(e.getExpressionNode() instanceof DataRequester){

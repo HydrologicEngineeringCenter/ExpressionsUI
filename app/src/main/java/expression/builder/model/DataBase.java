@@ -1,0 +1,66 @@
+package expression.builder.model;
+
+import expression.builder.controller.ExpressionController;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+/**
+ * Stores a List of {@link ExpressionEntry}s as the backend for the {@link VariableTableModel in the expressions tab. This DataBase can
+ * only be updated through {@link ExpressionController}, as it passes in an immutable List to other panels that want to
+ * access its contents.
+ */
+public class DataBase {
+    private List<ExpressionEntry> expressions;
+
+    public DataBase(){
+        expressions = new ArrayList<>();
+    }
+
+    //when adding new rows, calls this function to expand the list and to add a new row to the table.
+    public void addExpression(int index, ExpressionEntry expression){
+        expressions.add(index, expression);
+    }
+
+    //when editing rows, change the entry in the row accordingly
+    public void setExpression(int index, ExpressionEntry expression) {
+        expressions.set(index, expression);
+    }
+
+    //restore saved entries list after application has closed.
+    public void setExpressions(List<ExpressionEntry> entries){
+        expressions = new ArrayList();
+        if (entries == null || entries.isEmpty())
+        {
+            return;
+        }
+        expressions.addAll(entries);
+    }
+
+    //retrive the expression at the index
+    public ExpressionEntry getExpressionEntry(int index){
+        return expressions.get(index);
+    }
+
+    //popup menu to remove rows in the table model
+    public void removeExpression(int index){
+        expressions.remove(index);
+    }
+
+    /**
+     * allows other Panels to access the array but not modify them, all components will have to use {@link ExpressionController}
+     * to modify DataBase
+     */
+    public List<ExpressionEntry> getExpressions(){
+        return Collections.unmodifiableList(expressions);
+    }
+
+    public int findName(String name){
+        for (int i = 0; i < expressions.size(); i++){
+            if (expressions.get(i).getName().equals(name)){
+                return i;
+            }
+        }
+        return -1;
+    }
+}
