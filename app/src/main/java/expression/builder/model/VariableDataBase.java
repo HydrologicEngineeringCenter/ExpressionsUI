@@ -5,14 +5,14 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * Stores a List of {@link ExpressionEntry}s as the backend for the {@link VariableTableModel in the expressions tab. This DataBase can
+ * Stores a List of {@link ExpressionEntry}s as the backend for the {@link VariableTableModel in the expressions tab. This VariableDataBase can
  * only be updated through {@link expression.builder.controller.ExpressionController}, as it passes in an immutable List to other panels that want to
  * access its contents.
  */
-public class DataBase {
+public class VariableDataBase {
     private List<ExpressionEntry> expressions;
 
-    public DataBase(){
+    public VariableDataBase(){
         expressions = new ArrayList<>();
     }
 
@@ -43,7 +43,7 @@ public class DataBase {
 
     /**
      * allows other Panels to access the array but not modify them, all components will have to use {@link expression.builder.controller.ExpressionController}
-     * to modify DataBase
+     * to modify VariableDataBase
      */
     public List<ExpressionEntry> getExpressions(){
         return Collections.unmodifiableList(expressions);
@@ -51,7 +51,7 @@ public class DataBase {
 
     public int findName(String name){
         for (int i = 0; i < expressions.size(); i++){
-            if (expressions.get(i).getName().equals(name)){
+            if (expressions.get(i).name().equals(name)){
                 return i;
             }
         }

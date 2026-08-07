@@ -148,7 +148,7 @@ public class ExpressionNodeExplorer {
                         ExpressionNode updatable = new UpdateableLeafNode(name);
                         newExp = new ExpressionEntry(name, "[" + name + "]", updatable, doubleVal);
                     }
-                    EditEvent ev = new EditEvent(this, newExp.getName(), newExp.getExpressionNode(), newExp.getExpression(), newExp.getDefaultValue());
+                    EditEvent ev = new EditEvent(this, newExp.name(), newExp.expressionNode(), newExp.expression(), newExp.defaultValue());
                     expressionController.putExpression(ev);
                     variableView.refresh();
                     return;

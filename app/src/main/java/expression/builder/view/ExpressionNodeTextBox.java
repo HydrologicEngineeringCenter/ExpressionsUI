@@ -75,7 +75,7 @@ public class ExpressionNodeTextBox extends JPanel {
 
     public void insertVariableAtCursor(ExpressionEntry e){
         if (e == null) return;
-        insertTextAtCursor("[" + e.getName() + "]");
+        insertTextAtCursor("[" + e.name() + "]");
     }
 
     /**

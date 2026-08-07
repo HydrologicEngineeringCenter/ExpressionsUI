@@ -38,9 +38,9 @@ public class VariableTableModel extends AbstractTableModel {
         ExpressionEntry d = data.get(rowIndex);
         return switch(columnIndex) {
             case 0 -> rowIndex;
-            case 1 -> d.getName();
-            case 2 -> d.getExpression();
-            case 3 -> d.getDefaultValue();
+            case 1 -> d.name();
+            case 2 -> d.expression();
+            case 3 -> d.defaultValue();
             default -> null;
         };
     }

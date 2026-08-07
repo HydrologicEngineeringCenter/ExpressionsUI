@@ -3,7 +3,7 @@ package expression.builder.controller;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import expression.builder.model.DataBase;
+import expression.builder.model.VariableDataBase;
 import expression.builder.model.ExpressionEntry;
 import expression.builder.view.EditEvent;
 import usace.hec.expressions.*;
@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  * All panels access the database of {@link ExpressionEntry} through an instance of this class (can most likely be static).
  */
 public class ExpressionController {
-    DataBase db = new DataBase();
+    VariableDataBase db = new VariableDataBase();
 
     /**
      * {@code db.getExpressions()} returns a pointer to the list of db, but the panels can't modify it.
@@ -28,7 +28,7 @@ public class ExpressionController {
 
 
     /**
-     * Panels use this method to add rows to the DataBase, indices update accordingly.
+     * Panels use this method to add rows to the VariableDataBase, indices update accordingly.
      * @param index
      */
     public void removeExpression(int index) {
@@ -53,7 +53,7 @@ public class ExpressionController {
     public Map<String, ExpressionNode> getExpressionNodesByName() {
         List<ExpressionEntry> myList = db.getExpressions();
         return db.getExpressions().stream().limit(myList.size() - 1)
-                .collect(Collectors.toMap(entry -> entry.getName(), entry-> entry.getExpressionNode()));
+                .collect(Collectors.toMap(entry -> entry.name(), entry-> entry.expressionNode()));
     }
 
     public ExpressionNode parseExpression(String text) throws Exception {
@@ -62,8 +62,8 @@ public class ExpressionController {
         List<ExpressionEntry> data = getExpressions();
         DataHub dh = new DataHub();
         for(ExpressionEntry e:data){
-            if(e.getExpressionNode() instanceof DataRequester){
-                dh.setValue(((DataRequester)e.getExpressionNode()).getName(), e.getDefaultValue());
+            if(e.expressionNode() instanceof DataRequester){
+                dh.setValue(((DataRequester)e.expressionNode()).getName(), e.defaultValue());
             }
         }
         if (result.isSuccess()) {
