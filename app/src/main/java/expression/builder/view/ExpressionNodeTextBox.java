@@ -15,10 +15,6 @@ public class ExpressionNodeTextBox extends JPanel {
     private boolean isProgrammaticUpdate = false;
     private boolean infixSyntax = false;
 
-    public interface TextUpdateListener {
-        void onTextUpdated(String text);
-    }
-
     private TextUpdateListener textUpdateListener;
 
     public ExpressionNodeTextBox() {

@@ -5,6 +5,7 @@ import expression.builder.model.ExpressionNodeRegistry;
 import usace.hec.expressions.*;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 
 import expression.builder.model.ExpressionEntry;
 
@@ -17,6 +18,7 @@ public class ExpressionNodeExplorer {
     private ExpressionNode currentExpression;
     private ExpressionNodeTextBox textBox;
     private JLabel evaluationLabel;
+    private JTextArea scriptTextArea;
     private VariableTableView variableView;
     private ExpressionController expressionController;
 
@@ -31,19 +33,16 @@ public class ExpressionNodeExplorer {
     private void createAndShowGUI() {
         List<DisplayNode> nodes = ExpressionNodeRegistry.getAllNodes();
 
+        //Create whole frame
         JFrame frame = new JFrame("HEC Expression Builder");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         frame.setSize(1100, 700);
         frame.setLocationRelativeTo(null);
 
-        textBox = new ExpressionNodeTextBox();
-        textBox.setTextUpdateListener(this::handleTextUpdate);
+        //Creates left hand tab Pane
+        JTabbedPane tabbedPane = new JTabbedPane();
 
         ExpressionNodeTableView tableView = new ExpressionNodeTableView(nodes);
-        evaluationLabel = createEvaluationLabel();
-
-
-        JTabbedPane tabbedPane = new JTabbedPane();
 
         tabbedPane.add("Node Table", tableView);
 
@@ -56,17 +55,25 @@ public class ExpressionNodeExplorer {
 
         variableView.setData(expressionController.getExpressions());
 
+        ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, this::handleNodeInsertion);
+
+        tabbedPane.add("Operations", treeView);
+
+        //Creates right hand side typing textBox and evaluationLabel
+
+        textBox = new ExpressionNodeTextBox();
+        textBox.setTextUpdateListener(this::handleTextUpdate);
+        evaluationLabel = createEvaluationLabel();
+        scriptTextArea = createScriptText();
+
+
         JPanel expressionPanel = new JPanel(new BorderLayout());
-        expressionPanel.add(textBox, BorderLayout.CENTER);
+        expressionPanel.add(new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, new JScrollPane(scriptTextArea)), BorderLayout.CENTER);
         expressionPanel.add(evaluationLabel, BorderLayout.SOUTH);
         expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
 
 
-        ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, this::handleNodeInsertion);
 
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tabbedPane, treeView);
-        splitPane.setDividerLocation(400);
-        splitPane.setResizeWeight(0.5);
 
         JPanel buttonPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gc = new GridBagConstraints();
@@ -217,13 +224,15 @@ public class ExpressionNodeExplorer {
 
         frame.setLayout(new BorderLayout());
 
-        JPanel bottomPanel = new JPanel(new BorderLayout());
-        bottomPanel.add(expressionPanel, BorderLayout.CENTER);
-        bottomPanel.add(buttonPanel, BorderLayout.SOUTH);
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.add(expressionPanel, BorderLayout.CENTER);
+        rightPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        JSplitPane nestedFrame = new JSplitPane(JSplitPane.VERTICAL_SPLIT, splitPane, bottomPanel);
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tabbedPane, rightPanel);
+        splitPane.setDividerLocation(400);
+        splitPane.setResizeWeight(0.5);
 
-        frame.add(nestedFrame, BorderLayout.CENTER);
+        frame.add(splitPane, BorderLayout.CENTER);
         frame.setVisible(true);
     }
 
@@ -237,6 +246,18 @@ public class ExpressionNodeExplorer {
         return label;
     }
 
+    private JTextArea createScriptText(){
+        JTextArea scriptText = new JTextArea();
+        scriptText.setEditable(false);
+        scriptText.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        scriptText.setBackground(new Color(245, 245, 245));
+        scriptText.setLineWrap(true);
+        scriptText.setWrapStyleWord(true);
+        scriptText.setBorder(new EmptyBorder(8, 8, 8, 8));
+        scriptText.setText("");
+        return scriptText;
+    }
+
     private void handleTextUpdate(String text) {
         try {
             if (!text.isEmpty()) {
@@ -245,6 +266,7 @@ public class ExpressionNodeExplorer {
                 currentExpression = null;
             }
             updateEvaluationLabel();
+            updateScriptTextArea(text);
         } catch (Exception e) {
             handleError(e, "Parse Error");
         }
@@ -281,6 +303,32 @@ public class ExpressionNodeExplorer {
             evaluationLabel.setForeground(new Color(0x4C, 0xAF, 0x50));
         } catch (Exception e) {
             handleError(e, "Evaluation Error");
+        }
+    }
+    private void updateScriptTextArea(String text) {
+        if (currentExpression == null) {
+            scriptTextArea.setText("N/A");
+        }
+        else {
+            StringBuilder sb = new StringBuilder();
+            int depth = 0;
+            for (char c : text.toCharArray()) {
+                if (c == '(') {
+                    sb.append(c);
+                    depth++;
+                    sb.append('\n').append("\t".repeat(depth));
+                } else if (c == ')') {
+                    depth--;
+                    sb.append(c);
+                    sb.append('\n').append("\t".repeat(Math.max(0, depth)));
+                } else if (c == ',') {
+                    sb.append(c);
+                    sb.append('\n').append("\t".repeat(Math.max(0, depth)));
+                } else {
+                    sb.append(c);
+                }
+            }
+            scriptTextArea.setText(sb.toString());
         }
     }
 
