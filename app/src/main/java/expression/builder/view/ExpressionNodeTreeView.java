@@ -71,6 +71,7 @@ public class ExpressionNodeTreeView extends JPanel {
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() != 2) return;
                 TreePath path = tree.getPathForLocation(e.getX(), e.getY());
                 if (path != null) {
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();

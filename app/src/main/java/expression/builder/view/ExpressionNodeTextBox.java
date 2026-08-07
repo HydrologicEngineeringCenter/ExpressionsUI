@@ -13,10 +13,7 @@ import usace.hec.expressions.ExpressionNode;
 public class ExpressionNodeTextBox extends JPanel {
     private final JTextArea textArea;
     private boolean isProgrammaticUpdate = false;
-
-    public interface TextUpdateListener {
-        void onTextUpdated(String text);
-    }
+    private boolean infixSyntax = false;
 
     private TextUpdateListener textUpdateListener;
 
@@ -61,7 +58,7 @@ public class ExpressionNodeTextBox extends JPanel {
         if (node == null) return;
         String syntax;
         try {
-            syntax = node.defaultSyntax(false);
+            syntax = node.defaultSyntax(infixSyntax);
         } catch (Exception e) {
             syntax = node.displayName(false) + "()";
         }
@@ -70,7 +67,11 @@ public class ExpressionNodeTextBox extends JPanel {
 
     public void insertExpressionAtCursor(ExpressionNode variable) {
         if (variable == null) return;
-        insertTextAtCursor(variable.PreFixSyntax());
+        if (infixSyntax){
+            insertTextAtCursor(variable.ExcelSyntax());
+        } else {
+            insertTextAtCursor(variable.PreFixSyntax());
+        }
     }
 
     public void insertVariableAtCursor(ExpressionEntry e){
@@ -99,5 +100,9 @@ public class ExpressionNodeTextBox extends JPanel {
 
     public void setTextUpdateListener(TextUpdateListener listener) {
         this.textUpdateListener = listener;
+    }
+
+    public void setInfixSyntax(boolean infixSyntax){
+        this.infixSyntax = infixSyntax;
     }
 }
