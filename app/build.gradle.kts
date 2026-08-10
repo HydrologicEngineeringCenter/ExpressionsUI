@@ -8,7 +8,7 @@ plugins {
     id("com.palantir.git-version") version "3.0.0"
 }
 
-group = "usace.hec"
+group = "mil.army.usace.hec"
 
 repositories {
     mavenCentral()
@@ -55,8 +55,8 @@ publishing {
     publications {
         create<MavenPublication>("mavenJava") {
             from(components["java"])
-            groupId = "usace.hec"
-            artifactId = "expressionui"
+            groupId = "mil.army.usace.hec"
+            artifactId = "expressionsui"
         }
     }
     repositories {
