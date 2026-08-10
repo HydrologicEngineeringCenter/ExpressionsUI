@@ -42,6 +42,7 @@ tasks.test {
 // commit past the tag falls back to -SNAPSHOT, mirroring Expressions' versioning scheme.
 fun versionLabel(gitInfo: VersionDetails): String {
     val tag = gitInfo.lastTag?.trim()
+    println("lastTag=$tag isCleanTag=${gitInfo.isCleanTag} branchName=${gitInfo.branchName} gitHashFull=${gitInfo.gitHashFull}")
     if (gitInfo.isCleanTag && !tag.isNullOrEmpty() && Regex("v\\d+(\\.\\d+)*").matches(tag)) {
         return tag.substring(1)
     }
@@ -50,6 +51,7 @@ fun versionLabel(gitInfo: VersionDetails): String {
 
 val versionDetails: Closure<VersionDetails> by extra
 version = versionLabel(versionDetails.call())
+println("selected tag: $version")
 
 publishing {
     publications {
