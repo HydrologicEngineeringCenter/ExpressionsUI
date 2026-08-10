@@ -75,13 +75,17 @@ public class ExpressionNodeExplorer {
 
 
 
-        JPanel buttonPanel = new JPanel(new GridBagLayout());
-        GridBagConstraints gc = new GridBagConstraints();
-        JTextField nameField = new JTextField(20);
-        JTextField defaultValueField = new JTextField(20);
-        JCheckBox updatableCheck = new JCheckBox();
+        JPanel buttonPanel = new JPanel(new FlowLayout());
 
         JButton saveButton =  new JButton("Save");
+        saveButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                showAddVariableDialog();
+            }
+        });
+
+        buttonPanel.add(saveButton);
 
         variableView.setVariableTableListener(new VariableTableListener() {
             @Override
@@ -131,97 +135,6 @@ public class ExpressionNodeExplorer {
             }
         });
 
-        saveButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (!nameField.getText().isEmpty()){
-                    ExpressionEntry newExp;
-                    String name = nameField.getText();
-                    String expression = textBox.getExpression();
-                    String defaultValField = defaultValueField.getText();
-                    double doubleVal = 0;
-                    try {doubleVal = Double.parseDouble(defaultValField);
-                    } catch (Exception ignored){
-                        //Nothing happens if parseDouble is null
-                    }
-                    if (!expression.isEmpty() && !updatableCheck.isSelected()) {
-                        try {
-                            ExpressionNode expNode = expressionController.parseExpression(expression);
-                            newExp = new ExpressionEntry(name, expression, expNode,0.0);
-                        } catch (Exception ignored) {
-                            return;
-                        }
-                    } else {
-                        ExpressionNode updatable = new UpdateableLeafNode(name);
-                        newExp = new ExpressionEntry(name, "[" + name + "]", updatable, doubleVal);
-                    }
-                    EditEvent ev = new EditEvent(this, newExp.name(), newExp.expressionNode(), newExp.expression(), newExp.defaultValue());
-                    expressionController.putExpression(ev);
-                    variableView.refresh();
-                    return;
-                }
-                return;
-            }
-        });
-
-        updatableCheck.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                if (updatableCheck.isSelected()) {
-                    defaultValueField.setEnabled(true);
-                } else {
-                    defaultValueField.setEnabled(false);
-                }
-            }
-        });
-
-        updatableCheck.setSelected(false);
-        defaultValueField.setEnabled(false);
-        textBox.setEnabled(true);
-
-        gc.weightx = 1;
-        gc.weighty = 1;
-
-        gc.gridy = 0;
-
-        gc.gridx = 0;
-        gc.fill = GridBagConstraints.NONE;
-        gc.anchor = GridBagConstraints.LINE_END;
-        gc.insets = new Insets(0, 0, 0, 5);
-        buttonPanel.add(new JLabel("Name: "), gc);
-
-        gc.gridx = 1;
-        gc.anchor = GridBagConstraints.LINE_START;
-        gc.insets = new Insets(0, 0, 0, 0);
-        buttonPanel.add(nameField, gc);
-
-        gc.gridx = 2;
-        gc.fill = GridBagConstraints.NONE;
-        gc.anchor = GridBagConstraints.LINE_END;
-        gc.insets = new Insets(0, 0, 0, 5);
-        buttonPanel.add(new JLabel("Default Value: "), gc);
-
-        gc.gridx = 3;
-        gc.anchor = GridBagConstraints.LINE_START;
-        gc.insets = new Insets(0, 0, 0, 0);
-        buttonPanel.add(defaultValueField, gc);
-
-        gc.gridx = 4;
-        gc.fill = GridBagConstraints.NONE;
-        gc.anchor = GridBagConstraints.LINE_END;
-        gc.insets = new Insets(0, 0, 0, 5);
-        buttonPanel.add(new JLabel("Updatable?"), gc);
-
-        gc.gridx = 5;
-        gc.anchor = GridBagConstraints.LINE_START;
-        gc.insets = new Insets(0, 0, 0, 0);
-        buttonPanel.add(updatableCheck, gc);
-
-
-        gc.gridx = 6;
-        gc.anchor = GridBagConstraints.LAST_LINE_START;
-        buttonPanel.add(saveButton, gc);
-
         frame.setLayout(new BorderLayout());
 
         JPanel rightPanel = new JPanel(new BorderLayout());
@@ -235,6 +148,91 @@ public class ExpressionNodeExplorer {
         frame.add(splitPane, BorderLayout.CENTER);
         frame.setVisible(true);
     }
+
+    private void showAddVariableDialog() {
+        JTextField nameField = new JTextField(20);
+        JTextField defaultValueField = new JTextField(20);
+        JCheckBox updatableCheck = new JCheckBox();
+        defaultValueField.setEnabled(false);
+        updatableCheck.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                defaultValueField.setEnabled(updatableCheck.isSelected());
+            }
+        });
+
+        JPanel panel = new JPanel(new GridBagLayout());
+        GridBagConstraints gc = new GridBagConstraints();
+        gc.insets = new Insets(4, 4, 4, 4);
+
+        gc.gridx = 0;
+        gc.gridy = 0;
+        gc.anchor = GridBagConstraints.LINE_END;
+        panel.add(new JLabel("Name: "), gc);
+
+        gc.gridx = 1;
+        gc.anchor = GridBagConstraints.LINE_START;
+        panel.add(nameField, gc);
+
+        gc.gridx = 0;
+        gc.gridy = 1;
+        gc.anchor = GridBagConstraints.LINE_END;
+        panel.add(new JLabel("Default Value: "), gc);
+
+        gc.gridx = 1;
+        gc.anchor = GridBagConstraints.LINE_START;
+        panel.add(defaultValueField, gc);
+
+        gc.gridx = 0;
+        gc.gridy = 2;
+        gc.anchor = GridBagConstraints.LINE_END;
+        panel.add(new JLabel("Updatable?"), gc);
+
+        gc.gridx = 1;
+        gc.anchor = GridBagConstraints.LINE_START;
+        panel.add(updatableCheck, gc);
+
+        //Dialog Pane creation
+        JOptionPane pane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
+        JDialog dialog = pane.createDialog("Add Variable");
+        dialog.setResizable(true);
+        dialog.setVisible(true);
+
+        Object selected = pane.getValue();
+        //check if OK was selected, return CLOSED_OPTION if any other action was taken to close the dialog.
+        int result = (selected instanceof Integer) ? (Integer) selected : JOptionPane.CLOSED_OPTION;
+
+        if (result != JOptionPane.OK_OPTION || nameField.getText().isEmpty()) {
+            return;
+        }
+
+        String name = nameField.getText();
+        String expression = textBox.getExpression();
+        double doubleVal = 0;
+        try {
+            doubleVal = Double.parseDouble(defaultValueField.getText());
+        } catch (Exception ignored) {
+            //Nothing happens if parseDouble is null
+        }
+
+        ExpressionEntry newExp;
+        if (!expression.isEmpty() && !updatableCheck.isSelected()) {
+            try {
+                ExpressionNode expNode = expressionController.parseExpression(expression);
+                newExp = new ExpressionEntry(name, expression, expNode, 0.0);
+            } catch (Exception ignored) {
+                return;
+            }
+        } else {
+            ExpressionNode updatable = new UpdateableLeafNode(name);
+            newExp = new ExpressionEntry(name, "[" + name + "]", updatable, doubleVal);
+        }
+
+        EditEvent ev = new EditEvent(this, newExp.name(), newExp.expressionNode(), newExp.expression(), newExp.defaultValue());
+        expressionController.putExpression(ev);
+        variableView.refresh();
+    }
+
 
     private JLabel createEvaluationLabel() {
         JLabel label = new JLabel("Evaluation: N/A");
