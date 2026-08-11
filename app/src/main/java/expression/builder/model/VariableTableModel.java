@@ -44,4 +44,9 @@ public class VariableTableModel extends AbstractTableModel {
             default -> null;
         };
     }
+
+    @Override
+    public boolean isCellEditable(int rowIndex, int columnIndex) {
+        return super.isCellEditable(rowIndex, columnIndex);
+    }
 }

@@ -29,7 +29,7 @@ java {
 }
 
 application {
-    mainClass.set("expression.builder.App")
+    mainClass.set("expression.builder.view.ExpressionNodeExplorer")
 }
 
 tasks.test {

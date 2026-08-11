@@ -5,6 +5,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
+ *  @apiNote Internal wiring — not intended for use outside this application.
  * Stores a List of {@link ExpressionEntry}s as the backend for the {@link VariableTableModel in the expressions tab. This VariableDataBase can
  * only be updated through {@link expression.builder.controller.ExpressionController}, as it passes in an immutable List to other panels that want to
  * access its contents.

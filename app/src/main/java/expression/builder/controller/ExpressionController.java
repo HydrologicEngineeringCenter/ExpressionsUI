@@ -12,6 +12,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
+ *  @apiNote Internal wiring — not intended for use outside this application.
  * All panels access the database of {@link ExpressionEntry} through an instance of this class (can most likely be static).
  */
 public class ExpressionController {
