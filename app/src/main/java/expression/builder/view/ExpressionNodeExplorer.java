@@ -19,6 +19,7 @@ public class ExpressionNodeExplorer {
     private ExpressionNodeTextBox textBox;
     private JLabel evaluationLabel;
     private JTextArea scriptTextArea;
+    private JTextArea commentTextArea;
     private VariableTableView variableView;
     private ExpressionController expressionController;
 
@@ -55,7 +56,9 @@ public class ExpressionNodeExplorer {
 
         variableView.setData(expressionController.getExpressions());
 
-        ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, this::handleNodeInsertion);
+        commentTextArea = createCommentText();
+
+        ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, (descriptor, clicks) -> handleNodeInsertion(descriptor, clicks));
 
         tabbedPane.add("Operations", treeView);
 
@@ -68,6 +71,7 @@ public class ExpressionNodeExplorer {
 
 
         JPanel expressionPanel = new JPanel(new BorderLayout());
+        //Splitpane to edit the size of the box where typing happens and the box where the script format of the expression is shown.
         expressionPanel.add(new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, new JScrollPane(scriptTextArea)), BorderLayout.CENTER);
         expressionPanel.add(evaluationLabel, BorderLayout.SOUTH);
         expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
@@ -137,11 +141,18 @@ public class ExpressionNodeExplorer {
 
         frame.setLayout(new BorderLayout());
 
+        //Combines all lefthand components into a single panel on the left;
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.add(tabbedPane, BorderLayout.CENTER);
+        leftPanel.add(commentTextArea, BorderLayout.SOUTH);
+
+        //Combines all righthand components into a single panel on the right;
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.add(expressionPanel, BorderLayout.CENTER);
         rightPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tabbedPane, rightPanel);
+        //Combine the lefthand tabbedPane with tables and comments on all functions with the right panel where expression building takes place
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         splitPane.setDividerLocation(400);
         splitPane.setResizeWeight(0.5);
 
@@ -206,6 +217,7 @@ public class ExpressionNodeExplorer {
             return;
         }
 
+        //TODO: SUPPORT CREATION OF OTHER NODES BESIDES DOUBLE VARIABLE NODE
         String name = nameField.getText();
         String expression = textBox.getExpression();
         double doubleVal = 0;
@@ -224,7 +236,7 @@ public class ExpressionNodeExplorer {
                 return;
             }
         } else {
-            ExpressionNode updatable = new UpdateableLeafNode(name);
+            ExpressionNode updatable = new DoubleVariableNode(name);
             newExp = new ExpressionEntry(name, "[" + name + "]", updatable, doubleVal);
         }
 
@@ -253,7 +265,20 @@ public class ExpressionNodeExplorer {
         scriptText.setWrapStyleWord(true);
         scriptText.setBorder(new EmptyBorder(8, 8, 8, 8));
         scriptText.setText("");
+        scriptText.setBorder(BorderFactory.createTitledBorder("Script Format"));
         return scriptText;
+    }
+
+    private JTextArea createCommentText(){
+        JTextArea commentText = new JTextArea();
+        commentText.setEditable(true);
+        commentText.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        commentText.setLineWrap(true);
+        commentText.setWrapStyleWord(true);
+        commentText.setBorder(new EmptyBorder(8, 8, 8, 8));
+        commentText.setText("");
+        commentText.setBorder(BorderFactory.createTitledBorder("Description"));
+        return commentText;
     }
 
     private void handleTextUpdate(String text) {
@@ -270,9 +295,12 @@ public class ExpressionNodeExplorer {
         }
     }
 
-    private void handleNodeInsertion(DisplayNode descriptor) {
+    private void handleNodeInsertion(DisplayNode descriptor, int clicks) {
         try {
-            textBox.insertNodeAtCursor(descriptor);
+            commentTextArea.setText(descriptor.getDescription());
+            if (clicks == 2) {
+                textBox.insertNodeAtCursor(descriptor);
+            }
         } catch (Exception e) {
             // Fallback: insert the default syntax string directly.
             // This keeps the UI resilient even when constructor reflection fails.

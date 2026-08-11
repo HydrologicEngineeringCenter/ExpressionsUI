@@ -1,12 +1,14 @@
 package expression.builder.controller;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 
 import expression.builder.model.VariableDataBase;
 import expression.builder.model.ExpressionEntry;
 import expression.builder.view.EditEvent;
 import usace.hec.expressions.*;
+import usace.hec.model.DataHub;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -59,12 +61,13 @@ public class ExpressionController {
 
     public ExpressionNode parseExpression(String text) throws Exception {
         ExpressionParser parser = new ExpressionParser();
-        ParseResult result = parser.parse(text);
+        //TODO: pass in Map from the VariableTable
+        ParseResult result = parser.parse(text, new HashMap<>());
         List<ExpressionEntry> data = getExpressions();
         DataHub dh = new DataHub();
         for(ExpressionEntry e:data){
             if(e.expressionNode() instanceof DataRequester){
-                dh.setValue(((DataRequester)e.expressionNode()).getName(), e.defaultValue());
+                dh.setDouble(((DataRequester)e.expressionNode()).getName(), (double) e.defaultValue());
             }
         }
         if (result.isSuccess()) {
