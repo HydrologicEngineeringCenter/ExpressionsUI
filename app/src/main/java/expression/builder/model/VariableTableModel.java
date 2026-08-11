@@ -12,7 +12,7 @@ public class VariableTableModel extends AbstractTableModel {
         this.data = data;
     }
 
-    private final String[] columns = {"Index", "Name", "Expression", "Default Value"};
+    private final String[] columns = {"Index", "Type", "Name", "Expression", "Default Value"};
 
     @Override
     public int getRowCount() {
@@ -38,9 +38,10 @@ public class VariableTableModel extends AbstractTableModel {
         ExpressionEntry d = data.get(rowIndex);
         return switch(columnIndex) {
             case 0 -> rowIndex;
-            case 1 -> d.name();
-            case 2 -> d.expression();
-            case 3 -> d.defaultValue();
+            case 1 -> d.variableType();
+            case 2 -> d.name();
+            case 3 -> d.expression();
+            case 4 -> d.defaultValue();
             default -> null;
         };
     }

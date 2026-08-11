@@ -25,9 +25,16 @@ public class VariableTableView extends JPanel {
     public VariableTableView(){
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createTitledBorder("Variable Table"));
+        setMinimumSize(new Dimension(400, 200));
         model = new VariableTableModel();
         table = new JTable(model);
         popup = new JPopupMenu();
+
+        table.getColumnModel().getColumn(0).setPreferredWidth(55);
+        table.getColumnModel().getColumn(1).setPreferredWidth(100);
+        table.getColumnModel().getColumn(2).setPreferredWidth(140);
+        table.getColumnModel().getColumn(3).setPreferredWidth(140);
+        table.getColumnModel().getColumn(4).setPreferredWidth(140);
 
         JMenuItem removeItem = new JMenuItem("Remove row");
         popup.add(removeItem);

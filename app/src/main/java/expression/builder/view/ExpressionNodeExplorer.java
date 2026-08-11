@@ -46,9 +46,10 @@ public class ExpressionNodeExplorer {
         ExpressionNodeTableView tableView = new ExpressionNodeTableView(nodes);
 
         tabbedPane.add("Node Table", tableView);
+        tabbedPane.setMinimumSize(new Dimension(150, 100));
 
         variableView = new VariableTableView();
-
+        variableView.setMinimumSize(new Dimension(150, 100));
 
         tabbedPane.add("Variable Table", variableView);
 
@@ -59,6 +60,8 @@ public class ExpressionNodeExplorer {
         commentTextArea = createCommentText();
 
         ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, (descriptor, clicks) -> handleNodeInsertion(descriptor, clicks));
+
+        treeView.setMinimumSize(new Dimension(150, 100));
 
         tabbedPane.add("Operations", treeView);
 
@@ -145,6 +148,7 @@ public class ExpressionNodeExplorer {
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.add(tabbedPane, BorderLayout.CENTER);
         leftPanel.add(commentTextArea, BorderLayout.SOUTH);
+        leftPanel.setMinimumSize(new Dimension(150, 100));
 
         //Combines all righthand components into a single panel on the right;
         JPanel rightPanel = new JPanel(new BorderLayout());
@@ -163,12 +167,20 @@ public class ExpressionNodeExplorer {
     private void showAddVariableDialog() {
         JTextField nameField = new JTextField(20);
         JTextField defaultValueField = new JTextField(20);
-        JCheckBox updatableCheck = new JCheckBox();
+        JComboBox<String> typeComboBox = new JComboBox<>();
+        DefaultComboBoxModel<String> typeModel = new DefaultComboBoxModel<>();
+        typeModel.addElement("Constant");
+        typeModel.addElement("Updatable Variable");
+        typeModel.addElement("Expression Holder");
+        //TODO: Raise a text error if there are two Final Outputs
+        typeModel.addElement("Final Output");
+        typeComboBox.setModel(typeModel);
+        typeComboBox.setSelectedIndex(0);
         defaultValueField.setEnabled(false);
-        updatableCheck.addActionListener(new ActionListener() {
+        typeComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                defaultValueField.setEnabled(updatableCheck.isSelected());
+                defaultValueField.setEnabled(typeComboBox.getSelectedItem().equals("Updatable Variable"));
             }
         });
 
@@ -197,11 +209,11 @@ public class ExpressionNodeExplorer {
         gc.gridx = 0;
         gc.gridy = 2;
         gc.anchor = GridBagConstraints.LINE_END;
-        panel.add(new JLabel("Updatable?"), gc);
+        panel.add(new JLabel("Variable Type?"), gc);
 
         gc.gridx = 1;
         gc.anchor = GridBagConstraints.LINE_START;
-        panel.add(updatableCheck, gc);
+        panel.add(typeComboBox, gc);
 
         //Dialog Pane creation
         JOptionPane pane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
@@ -227,20 +239,23 @@ public class ExpressionNodeExplorer {
             //Nothing happens if parseDouble is null
         }
 
-        ExpressionEntry newExp;
-        if (!expression.isEmpty() && !updatableCheck.isSelected()) {
+        ExpressionNode newExp;
+        Object defaultValue;
+        if (!expression.isEmpty() && !typeComboBox.getSelectedItem().equals("Updatable Variable")) {
             try {
-                ExpressionNode expNode = expressionController.parseExpression(expression);
-                newExp = new ExpressionEntry(name, expression, expNode, 0.0);
+                newExp = expressionController.parseExpression(expression);
+                defaultValue = "Unused";
             } catch (Exception ignored) {
                 return;
             }
+        } else if (typeComboBox.getSelectedItem().equals("Updatable Variable")) {
+            newExp = new DoubleVariableNode(name);
+            defaultValue = doubleVal;
         } else {
-            ExpressionNode updatable = new DoubleVariableNode(name);
-            newExp = new ExpressionEntry(name, "[" + name + "]", updatable, doubleVal);
+            return;
         }
 
-        EditEvent ev = new EditEvent(this, newExp.name(), newExp.expressionNode(), newExp.expression(), newExp.defaultValue());
+        EditEvent ev = new EditEvent(this, name, newExp, expression, typeComboBox.getSelectedItem().toString(), defaultValue);
         expressionController.putExpression(ev);
         variableView.refresh();
     }

@@ -10,6 +10,7 @@ public class EditEvent extends EventObject {
     private ExpressionNode expression;
     private String expressionString;
     private Object defaultValue;
+    private String variableType;
 
     /**
      * Constructs a prototypical Event.
@@ -28,12 +29,13 @@ public class EditEvent extends EventObject {
      * @param expression
      * @param expressionString
      */
-    public EditEvent(Object source, String name, ExpressionNode expression, String expressionString, Object defaultValue) {
+    public EditEvent(Object source, String name, ExpressionNode expression, String expressionString, String variableType, Object defaultValue) {
         super(source);
         this.name = name;
         this.expression = expression;
         this.expressionString = expressionString;
         this.defaultValue = defaultValue;
+        this.variableType = variableType;
     }
     public EditEvent(Object source,int index, String name, ExpressionNode expression, String expressionString, Object defaultValue) {
         super(source);
@@ -62,5 +64,9 @@ public class EditEvent extends EventObject {
 
     public Object getDefaultValue() {
         return defaultValue;
+    }
+
+    public String getVariableType() {
+        return variableType;
     }
 }
