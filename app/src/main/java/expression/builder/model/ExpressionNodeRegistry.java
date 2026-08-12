@@ -6,8 +6,10 @@ import usace.hec.expressions.DisplayNodeProvider;
 import usace.hec.expressions.ExpressionOperator;
 import usace.hec.expressions.ExpressionType;
 
+import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -23,8 +25,8 @@ public class ExpressionNodeRegistry {
      * sorted by category and then prefix display name.
      */
     public static List<DisplayNode> getAllNodes() {
-        return coreRegistry.getDisplayNodes().stream()
-                .sorted(java.util.Comparator.comparing(DisplayNode::category)
+        return coreRegistry.getDisplayNodes().stream().filter(displayNode -> !displayNode.category().equals("LEAF"))
+                .sorted(Comparator.comparing((DisplayNode displayNode) -> displayNode.category())
                         .thenComparing(n -> n.displayName(false)))
                 .collect(Collectors.toList());
     }
