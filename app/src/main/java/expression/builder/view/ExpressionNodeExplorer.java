@@ -348,11 +348,12 @@ public class ExpressionNodeExplorer {
             }
         } else if (varType.equals("Updatable Variable")) {
             switch (defaultValueEvaluate.resultType()){
-                case ExpressionType.DOUBLE -> newExp = new DoubleVariableNode(name);
-                case ExpressionType.BOOLEAN -> newExp = new BooleanVariableNode(name);
-                case ExpressionType.INTEGER -> newExp = new IntegerVariableNode(name);
-                case ExpressionType.STRING -> newExp = new StringVariableNode(name);
-                case ExpressionType.DATE -> newExp = new DateTimeVariableNode(name);
+                //These don't actually create usable VariableNodes, constructed here for clarification on what kind of node is being added
+                case ExpressionType.DOUBLE -> newExp = new DoubleVariableNode(STRING_EMPTY);
+                case ExpressionType.BOOLEAN -> newExp = new BooleanVariableNode(STRING_EMPTY);
+                case ExpressionType.INTEGER -> newExp = new IntegerVariableNode(STRING_EMPTY);
+                case ExpressionType.STRING -> newExp = new StringVariableNode(STRING_EMPTY);
+                case ExpressionType.DATE -> newExp = new DateTimeVariableNode(STRING_EMPTY);
                 default -> throw new RuntimeException("Invalid Default Value");
             }
             expression = "[" + name + "]";
