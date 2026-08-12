@@ -77,11 +77,9 @@ public class ExpressionNodeExplorer {
             public void stateChanged(ChangeEvent e) {
                 if (tabbedPane.getSelectedComponent().equals(variableView)) {
                     commentTextArea.setBorder(BorderFactory.createTitledBorder("Comment"));
-                    commentTextArea.setEditable(true);
                     expresssionTextArea.setVisible(true);
                 } else {
                     commentTextArea.setBorder(BorderFactory.createTitledBorder("Description"));
-                    commentTextArea.setEditable(false);
                     expresssionTextArea.setVisible(false);
                 }
                 commentTextArea.setText("");
