@@ -76,7 +76,7 @@ public class VariableTableView extends JPanel {
             if(e.getButton() == MouseEvent.BUTTON1 && listener!=null){
                 listener.getTextComment(row);
                 if (e.getClickCount() == 2) {
-                    listener.getExpression(row);
+                    listener.getExpressionText(row);
                 }
             }
             }

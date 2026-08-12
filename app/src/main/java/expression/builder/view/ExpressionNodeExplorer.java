@@ -124,7 +124,7 @@ public class ExpressionNodeExplorer {
         //sets a listener which allows ExpressionNodeExplorer to update if variableView is updated
         variableView.setVariableTableListener(new VariableTableListener() {
             @Override
-            public void getExpression(int row) {
+            public void getExpressionText(int row) {
                 //textBox.setNodeText(e.getExpressionNode());
                 ExpressionEntry e = expressionController.getExpressions().get(row);
 //                ExpressionOperator op = e.getExpressionNode().Operator();
@@ -241,8 +241,21 @@ public class ExpressionNodeExplorer {
         gc.anchor = GridBagConstraints.LINE_START;
         panel.add(nameField, gc);
 
+        //Next Row
         gc.gridx = 0;
         gc.gridy = 1;
+        gc.anchor = GridBagConstraints.LINE_END;
+        panel.add(defaultValueLabel, gc);
+
+        gc.gridx = 1;
+        gc.anchor = GridBagConstraints.LINE_START;
+        panel.add(defaultValueField, gc);
+
+
+
+        //Next Row
+        gc.gridx = 0;
+        gc.gridy = 2;
         gc.anchor = GridBagConstraints.LINE_END;
         panel.add(new JLabel("Comments: "), gc);
 
@@ -250,23 +263,16 @@ public class ExpressionNodeExplorer {
         gc.anchor = GridBagConstraints.LINE_START;
         panel.add(commentField, gc);
 
+
+        //Next Row
         gc.gridx = 0;
-        gc.gridy = 2;
+        gc.gridy = 3;
         gc.anchor = GridBagConstraints.LINE_END;
         panel.add(new JLabel("Variable Type?"), gc);
 
         gc.gridx = 1;
         gc.anchor = GridBagConstraints.LINE_START;
         panel.add(typeComboBox, gc);
-
-        gc.gridx = 0;
-        gc.gridy = 3;
-        gc.anchor = GridBagConstraints.LINE_END;
-        panel.add(defaultValueLabel, gc);
-
-        gc.gridx = 1;
-        gc.anchor = GridBagConstraints.LINE_START;
-        panel.add(defaultValueField, gc);
 
         //Dialog Pane creation
         JOptionPane pane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
