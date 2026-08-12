@@ -12,6 +12,7 @@ import expression.builder.model.ExpressionEntry;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class ExpressionNodeExplorer {
@@ -88,7 +89,11 @@ public class ExpressionNodeExplorer {
         saveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                showAddVariableDialog();
+                try {
+                    showAddVariableDialog();
+                } catch (Exception ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         });
 
@@ -134,12 +139,6 @@ public class ExpressionNodeExplorer {
                 expressionController.removeExpression(row);
                 variableView.refresh();
             }
-
-            @Override
-            public void rowAddedorEditRequested(EditEvent ev) {
-                expressionController.putExpression(ev);
-                variableView.refresh();
-            }
         });
 
         frame.setLayout(new BorderLayout());
@@ -164,7 +163,7 @@ public class ExpressionNodeExplorer {
         frame.setVisible(true);
     }
 
-    private void showAddVariableDialog() {
+    private void showAddVariableDialog() throws Exception {
         JTextField nameField = new JTextField(20);
         JTextField defaultValueField = new JTextField(20);
         JComboBox<String> typeComboBox = new JComboBox<>();
@@ -229,33 +228,37 @@ public class ExpressionNodeExplorer {
             return;
         }
 
-        //TODO: SUPPORT CREATION OF OTHER NODES BESIDES DOUBLE VARIABLE NODE
         String name = nameField.getText();
         String expression = textBox.getExpression();
-        double doubleVal = 0;
-        try {
-            doubleVal = Double.parseDouble(defaultValueField.getText());
-        } catch (Exception ignored) {
-            //Nothing happens if parseDouble is null
-        }
+        ExpressionNode defaultValueEvaluate = defaultValueField.getText().isEmpty() ? new DoubleConstantNode(0.0) : expressionController.parseExpression(defaultValueField.getText());
+        Object defaultValue;
+        String varType = (String) typeComboBox.getSelectedItem();
+        assert varType != null;
 
         ExpressionNode newExp;
-        Object defaultValue;
-        if (!expression.isEmpty() && !typeComboBox.getSelectedItem().equals("Updatable Variable")) {
+        if (!expression.isEmpty() && !varType.equals("Updatable Variable")) {
             try {
                 newExp = expressionController.parseExpression(expression);
                 defaultValue = "Unused";
             } catch (Exception ignored) {
                 return;
             }
-        } else if (typeComboBox.getSelectedItem().equals("Updatable Variable")) {
-            newExp = new DoubleVariableNode(name);
-            defaultValue = doubleVal;
+        } else if (varType.equals("Updatable Variable")) {
+            switch (defaultValueEvaluate.resultType()){
+                case ExpressionType.DOUBLE -> newExp = new DoubleVariableNode(name);
+                case ExpressionType.BOOLEAN -> newExp = new BooleanVariableNode(name);
+                case ExpressionType.INTEGER -> newExp = new IntegerVariableNode(name);
+                case ExpressionType.STRING -> newExp = new StringVariableNode(name);
+                case ExpressionType.DATE -> newExp = new DateTimeVariableNode(name);
+                default -> throw new RuntimeException("Invalid Default Value");
+            }
+            expression = "[" + name + "]";
+            defaultValue = expressionController.evaluateSafely(defaultValueEvaluate);
         } else {
             return;
         }
 
-        EditEvent ev = new EditEvent(this, name, newExp, expression, typeComboBox.getSelectedItem().toString(), defaultValue);
+        EditEvent ev = new EditEvent(this, name, newExp, expression, varType, defaultValue);
         expressionController.putExpression(ev);
         variableView.refresh();
     }

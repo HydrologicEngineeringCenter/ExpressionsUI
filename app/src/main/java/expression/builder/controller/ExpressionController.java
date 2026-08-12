@@ -1,6 +1,7 @@
 package expression.builder.controller;
 
 import java.lang.reflect.Method;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
  */
 public class ExpressionController {
     VariableDataBase db = new VariableDataBase();
+    DataHub dh = new DataHub();
 
     /**
      * {@code db.getExpressions()} returns a pointer to the list of db, but the panels can't modify it.
@@ -38,9 +40,17 @@ public class ExpressionController {
         db.removeExpression(index);
     }
 
-    public void putExpression(EditEvent ev){
+    public void putExpression(EditEvent ev) throws Exception {
         int index = db.findName(ev.getName());
         ExpressionEntry entry = new ExpressionEntry(ev.getName(), ev.getExpressionString(), ev.getExpression(), ev.getVariableType(), ev.getDefaultValue());
+        //Initialize ExpressionNode
+        switch (entry.expressionNode().resultType()) {
+                case ExpressionType.DOUBLE -> dh.setDouble(ev.getName(), entry.variableType().equals("Updatable Variable")? (double) entry.defaultValue() : (double) evaluateSafely(entry.expressionNode()));
+                case ExpressionType.BOOLEAN -> dh.setBoolean(ev.getName(), entry.variableType().equals("Updatable Variable")? (boolean) entry.defaultValue(): (boolean) evaluateSafely(entry.expressionNode()));
+                case ExpressionType.INTEGER -> dh.setInt(ev.getName(), entry.variableType().equals("Updatable Variable")? (int) entry.defaultValue() : (int) evaluateSafely(entry.expressionNode()));
+                case ExpressionType.STRING -> dh.setString(ev.getName(), entry.variableType().equals("Updatable Variable")? (String) entry.defaultValue() : (String) evaluateSafely(entry.expressionNode()));
+                case ExpressionType.DATE -> dh.setDate(ev.getName(), entry.variableType().equals("Updatable Variable")? (LocalDateTime) entry.defaultValue() : (LocalDateTime) evaluateSafely(entry.expressionNode()));
+        }
         if (index != -1){
             db.setExpression(index, entry);
         } else{
@@ -61,28 +71,40 @@ public class ExpressionController {
 
     public Map<String, ExpressionType> placeholder() {
         List<ExpressionEntry> myList = db.getExpressions();
-        return db.getExpressions().stream().limit(myList.size()).filter(entry -> entry.variableType().equals("Updatable Variable"))
+        return db.getExpressions().stream().limit(myList.size())
                 .collect(Collectors.toMap(entry -> entry.name(), entry-> entry.expressionNode().resultType()));
     }
 
+    //Only parse to update text, nodes are transient and not saved
     public ExpressionNode parseExpression(String text) throws Exception {
-        ExpressionParser parser = new ExpressionParser();
-        //TODO: pass in Map from the VariableTable
-        ParseResult result = parser.parse(text, placeholder());
-        List<ExpressionEntry> data = getExpressions();
-        DataHub dh = new DataHub();
-        for(ExpressionEntry e:data){
-            if(e.expressionNode() instanceof DataRequester){
-                dh.setDouble(((DataRequester)e.expressionNode()).getName(), (double) e.defaultValue());
-            }
-        }
+        Map<String, ExpressionType> variableMap = placeholder();
+        ParseResult result = ExpressionParser.parse(text, variableMap);
         if (result.isSuccess()) {
             ExpressionNode node = (ExpressionNode)result.getNode();
+            //parse result creates new variableNodes, must set their providers after parsing
             node.setProvider(dh);
             return node;
         }
         throw new IllegalArgumentException(result.getError() + " at position " + result.getError().position());
     }
+
+//    public void simulateVariables() throws Exception {
+//        List<ExpressionEntry> data = getExpressions();
+//        //TODO: move DataHub to register when expressions are ADDED, not parsed. Also update it so that ALL types are supported.
+//        for(ExpressionEntry e : data){
+//            if(e.expressionNode() instanceof DataRequester){
+//                ExpressionType eType = e.expressionNode().resultType();
+//                switch (eType) {
+//                    case ExpressionType.DOUBLE -> dh.setDouble(((DataRequester)e.expressionNode()).getName(), (double) e.defaultValue());
+//                    case ExpressionType.BOOLEAN -> dh.setBoolean(((DataRequester)e.expressionNode()).getName(), (boolean) e.defaultValue());
+//                    case ExpressionType.INTEGER -> dh.setInt(((DataRequester)e.expressionNode()).getName(), (int) e.defaultValue());
+//                    case ExpressionType.STRING -> dh.setString(((DataRequester)e.expressionNode()).getName(), (String) e.defaultValue());
+//                    case ExpressionType.DATE -> dh.setDate(((DataRequester)e.expressionNode()).getName(), (LocalDateTime) e.defaultValue());
+//                }
+//                dh.setDouble(((DataRequester)e.expressionNode()).getName(), (double) e.defaultValue());
+//            }
+//        }
+//    }
 
     public Object evaluateSafely(ExpressionNode node) throws Exception {
         Method evalMethod = node.getClass().getMethod("evaluate");
