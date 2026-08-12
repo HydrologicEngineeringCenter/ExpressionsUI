@@ -38,7 +38,9 @@ public class VariableTableView extends JPanel {
         table.getColumnModel().getColumn(5).setPreferredWidth(100);
 
         JMenuItem removeItem = new JMenuItem("Remove row");
+        JMenuItem editItem = new JMenuItem("Edit row");
         popup.add(removeItem);
+        popup.add(editItem);
 
         //popup appears when right clicking
         table.addMouseListener(new MouseAdapter() {
@@ -51,6 +53,8 @@ public class VariableTableView extends JPanel {
                 if(e.getButton() == MouseEvent.BUTTON3){
                     popup.show(table, e.getX(),e.getY());
                 }
+
+                if (listener != null) listener.getTextComment(row);
             }
         });
 
@@ -62,6 +66,18 @@ public class VariableTableView extends JPanel {
 
                 if (listener!=null){
                     listener.rowDeleted(row);
+                }
+            }
+        });
+
+        //helps to edit a row from table
+        editItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int row = table.getSelectedRow();
+
+                if (listener!=null){
+                    listener.editRequested(row);
                 }
             }
         });

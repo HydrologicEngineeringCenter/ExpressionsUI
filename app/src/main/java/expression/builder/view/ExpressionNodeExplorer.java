@@ -18,6 +18,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 public class ExpressionNodeExplorer {
+    private final static String STRING_EMPTY = "";
     private ExpressionNode currentExpression;
     private ExpressionNodeTextBox textBox;
     private JLabel evaluationLabel;
@@ -26,6 +27,13 @@ public class ExpressionNodeExplorer {
     private JTextArea expresssionTextArea;
     private VariableTableView variableView;
     private ExpressionController expressionController;
+
+    //String components for setting all textboxes when someone uses the editMenu in popups
+    private String editingName;
+    private String editingComment;
+    private String editingType;
+    private String editingDefaults;
+    private boolean editRequested = false;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -82,7 +90,7 @@ public class ExpressionNodeExplorer {
                     commentTextArea.setBorder(BorderFactory.createTitledBorder("Description"));
                     expresssionTextArea.setVisible(false);
                 }
-                commentTextArea.setText("");
+                commentTextArea.setText(STRING_EMPTY);
             }
         });
 
@@ -164,6 +172,17 @@ public class ExpressionNodeExplorer {
             }
 
             @Override
+            public void editRequested(int row){
+                ExpressionEntry e = expressionController.getExpression(row);
+                editingName = e.name();
+                editingComment = e.comment();
+                editingType = e.variableType();
+                editingDefaults = e.defaultValue().toString();
+                editRequested = true;
+                textBox.setExpressionNodeText(e.expressionNode());
+            }
+
+            @Override
             public void getTextComment(int row) {
                 ExpressionEntry e = expressionController.getExpression(row);
                 commentTextArea.setText(e.comment());
@@ -217,9 +236,6 @@ public class ExpressionNodeExplorer {
         //TODO: Raise a text error if there are two Final Outputs
         typeModel.addElement("Final Output");
         typeComboBox.setModel(typeModel);
-        typeComboBox.setSelectedIndex(0);
-        defaultValueField.setVisible(false);
-        defaultValueLabel.setVisible(false);
         typeComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -227,6 +243,29 @@ public class ExpressionNodeExplorer {
                 defaultValueLabel.setVisible(typeComboBox.getSelectedItem().equals("Updatable Variable"));
             }
         });
+
+        //Initialize Dialog Box if an edit is requested
+        if (editRequested) {
+            nameField.setText(editingName);
+            defaultValueLabel.setText(editingDefaults);
+            commentField.setText(editingComment);
+            for (int i = 0; i < typeComboBox.getItemCount(); i++){
+                if (typeComboBox.getItemAt(i).equals(editingType)){
+                    typeComboBox.setSelectedIndex(i);
+                    if (i == 1){
+                        defaultValueField.setVisible(true);
+                        defaultValueLabel.setVisible(true);
+                    }
+                }
+            }
+        } else {
+            nameField.setText(STRING_EMPTY);
+            defaultValueLabel.setText(STRING_EMPTY);
+            commentField.setText(STRING_EMPTY);
+            typeComboBox.setSelectedIndex(0);
+            defaultValueField.setVisible(false);
+            defaultValueLabel.setVisible(false);
+        }
 
         JPanel panel = new JPanel(new GridBagLayout());
         GridBagConstraints gc = new GridBagConstraints();
@@ -287,12 +326,12 @@ public class ExpressionNodeExplorer {
         int result = (selected instanceof Integer) ? (Integer) selected : JOptionPane.CLOSED_OPTION;
 
         if (result != JOptionPane.OK_OPTION || nameField.getText().isEmpty()) {
+            editRequested = false;
             return;
         }
 
         String name = nameField.getText();
         String expression = textBox.getExpression();
-        //TODO: Allow comment editing
         String comment = commentField.getText();
         ExpressionNode defaultValueEvaluate = defaultValueField.getText().isEmpty() ? new DoubleConstantNode(0.0) : expressionController.parseExpression(defaultValueField.getText());
         Object defaultValue;
@@ -303,7 +342,7 @@ public class ExpressionNodeExplorer {
         if (!expression.isEmpty() && !varType.equals("Updatable Variable")) {
             try {
                 newExp = expressionController.parseExpression(expression);
-                defaultValue = "";
+                defaultValue = STRING_EMPTY;
             } catch (Exception ignored) {
                 return;
             }
@@ -319,12 +358,14 @@ public class ExpressionNodeExplorer {
             expression = "[" + name + "]";
             defaultValue = expressionController.evaluateSafely(defaultValueEvaluate);
         } else {
+            editRequested = false;
             return;
         }
 
         EditEvent ev = new EditEvent(this, name, newExp, expression, varType, defaultValue, comment);
         expressionController.putExpression(ev);
         variableView.refresh();
+        editRequested = false;
     }
 
 
@@ -347,7 +388,7 @@ public class ExpressionNodeExplorer {
         scriptText.setLineWrap(true);
         scriptText.setWrapStyleWord(true);
         scriptText.setBorder(new EmptyBorder(8, 8, 8, 8));
-        scriptText.setText("");
+        scriptText.setText(STRING_EMPTY);
         scriptText.setBorder(BorderFactory.createTitledBorder("Script Format"));
         return scriptText;
     }
@@ -359,21 +400,21 @@ public class ExpressionNodeExplorer {
         commentText.setLineWrap(true);
         commentText.setWrapStyleWord(true);
         commentText.setBorder(new EmptyBorder(8, 8, 8, 8));
-        commentText.setText("");
+        commentText.setText(STRING_EMPTY);
         commentText.setBorder(BorderFactory.createTitledBorder("Description"));
         return commentText;
     }
 
     private JTextArea createExpressionText() {
-        JTextArea commentText = new JTextArea();
-        commentText.setEditable(false);
-        commentText.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        commentText.setLineWrap(true);
-        commentText.setWrapStyleWord(true);
-        commentText.setBorder(new EmptyBorder(8, 8, 8, 8));
-        commentText.setText("");
-        commentText.setBorder(BorderFactory.createTitledBorder("Expanded Expression"));
-        return commentText;
+        JTextArea expressionText = new JTextArea();
+        expressionText.setEditable(false);
+        expressionText.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        expressionText.setLineWrap(true);
+        expressionText.setWrapStyleWord(true);
+        expressionText.setBorder(new EmptyBorder(8, 8, 8, 8));
+        expressionText.setText(STRING_EMPTY);
+        expressionText.setBorder(BorderFactory.createTitledBorder("Expanded Expression"));
+        return expressionText;
     }
 
     //called for every update in ExpressionPreview

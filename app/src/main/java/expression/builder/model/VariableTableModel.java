@@ -40,7 +40,7 @@ public class VariableTableModel extends AbstractTableModel {
             case 0 -> rowIndex;
             case 1 -> d.variableType();
             case 2 -> d.name();
-            case 3 -> "Click to View";
+            case 3 -> d.variableType().equals("Expression Holder") || d.variableType().equals("Final Output") ? "Click to View" : d.expression();
             case 4 -> d.defaultValue();
             case 5 -> "Click to View";
             default -> null;

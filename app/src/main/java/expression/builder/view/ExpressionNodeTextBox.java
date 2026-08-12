@@ -54,6 +54,19 @@ public class ExpressionNodeTextBox extends JPanel {
         isProgrammaticUpdate = false;
     }
 
+    public void setExpressionNodeText(ExpressionNode node){
+        isProgrammaticUpdate = true;
+        String syntax;
+        if (infixSyntax){
+            syntax = node.ExcelSyntax();
+        } else {
+            syntax = node.PreFixSyntax();
+        }
+        textArea.setText(syntax);
+        textArea.setCaretPosition(0);
+        isProgrammaticUpdate = false;
+    }
+
     public void insertNodeAtCursor(DisplayNode node) {
         if (node == null) return;
         String syntax;
