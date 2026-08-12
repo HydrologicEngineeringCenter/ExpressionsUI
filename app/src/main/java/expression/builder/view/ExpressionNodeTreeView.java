@@ -5,6 +5,7 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.*;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import javax.swing.*;
 import javax.swing.tree.*;
@@ -14,7 +15,7 @@ import usace.hec.expressions.DisplayNode;
 public class ExpressionNodeTreeView extends JPanel {
 
     public ExpressionNodeTreeView(List<DisplayNode> nodes,
-                                   Consumer<DisplayNode> onNodeSelected) {
+                                  BiConsumer<DisplayNode, Integer> onNodeSelected) {
         setLayout(new BorderLayout());
         setBorder(BorderFactory.createTitledBorder("Operator Hierarchy"));
 
@@ -71,7 +72,6 @@ public class ExpressionNodeTreeView extends JPanel {
         tree.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                if (e.getClickCount() != 2) return;
                 TreePath path = tree.getPathForLocation(e.getX(), e.getY());
                 if (path != null) {
                     DefaultMutableTreeNode node = (DefaultMutableTreeNode) path.getLastPathComponent();
@@ -79,7 +79,7 @@ public class ExpressionNodeTreeView extends JPanel {
 
                     Object userObject = node.getUserObject();
                     if (userObject instanceof DisplayNode descriptor) {
-                        onNodeSelected.accept(descriptor);
+                        onNodeSelected.accept(descriptor, e.getClickCount());
                     }
                 }
                 //return;

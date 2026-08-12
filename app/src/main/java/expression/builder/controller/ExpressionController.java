@@ -1,12 +1,14 @@
 package expression.builder.controller;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 
 import expression.builder.model.VariableDataBase;
 import expression.builder.model.ExpressionEntry;
 import expression.builder.view.EditEvent;
 import usace.hec.expressions.*;
+import usace.hec.model.DataHub;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -38,7 +40,7 @@ public class ExpressionController {
 
     public void putExpression(EditEvent ev){
         int index = db.findName(ev.getName());
-        ExpressionEntry entry = new ExpressionEntry(ev.getName(), ev.getExpressionString(), ev.getExpression(), ev.getDefaultValue());
+        ExpressionEntry entry = new ExpressionEntry(ev.getName(), ev.getExpressionString(), ev.getExpression(), ev.getVariableType(), ev.getDefaultValue());
         if (index != -1){
             db.setExpression(index, entry);
         } else{
@@ -53,18 +55,25 @@ public class ExpressionController {
     //TODO: implementation currently does not use map the last entry to use it to return finalized value. Allow users to choose variable to return later
     public Map<String, ExpressionNode> getExpressionNodesByName() {
         List<ExpressionEntry> myList = db.getExpressions();
-        return db.getExpressions().stream().limit(myList.size() - 1)
+        return db.getExpressions().stream().limit(myList.size())
                 .collect(Collectors.toMap(entry -> entry.name(), entry-> entry.expressionNode()));
+    }
+
+    public Map<String, ExpressionType> placeholder() {
+        List<ExpressionEntry> myList = db.getExpressions();
+        return db.getExpressions().stream().limit(myList.size()).filter(entry -> entry.variableType().equals("Updatable Variable"))
+                .collect(Collectors.toMap(entry -> entry.name(), entry-> entry.expressionNode().resultType()));
     }
 
     public ExpressionNode parseExpression(String text) throws Exception {
         ExpressionParser parser = new ExpressionParser();
-        ParseResult result = parser.parse(text);
+        //TODO: pass in Map from the VariableTable
+        ParseResult result = parser.parse(text, placeholder());
         List<ExpressionEntry> data = getExpressions();
         DataHub dh = new DataHub();
         for(ExpressionEntry e:data){
             if(e.expressionNode() instanceof DataRequester){
-                dh.setValue(((DataRequester)e.expressionNode()).getName(), e.defaultValue());
+                dh.setDouble(((DataRequester)e.expressionNode()).getName(), (double) e.defaultValue());
             }
         }
         if (result.isSuccess()) {

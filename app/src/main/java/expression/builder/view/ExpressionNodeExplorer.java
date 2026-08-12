@@ -19,6 +19,7 @@ public class ExpressionNodeExplorer {
     private ExpressionNodeTextBox textBox;
     private JLabel evaluationLabel;
     private JTextArea scriptTextArea;
+    private JTextArea commentTextArea;
     private VariableTableView variableView;
     private ExpressionController expressionController;
 
@@ -45,9 +46,10 @@ public class ExpressionNodeExplorer {
         ExpressionNodeTableView tableView = new ExpressionNodeTableView(nodes);
 
         tabbedPane.add("Node Table", tableView);
+        tabbedPane.setMinimumSize(new Dimension(150, 100));
 
         variableView = new VariableTableView();
-
+        variableView.setMinimumSize(new Dimension(150, 100));
 
         tabbedPane.add("Variable Table", variableView);
 
@@ -55,7 +57,11 @@ public class ExpressionNodeExplorer {
 
         variableView.setData(expressionController.getExpressions());
 
-        ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, this::handleNodeInsertion);
+        commentTextArea = createCommentText();
+
+        ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, (descriptor, clicks) -> handleNodeInsertion(descriptor, clicks));
+
+        treeView.setMinimumSize(new Dimension(150, 100));
 
         tabbedPane.add("Operations", treeView);
 
@@ -68,6 +74,7 @@ public class ExpressionNodeExplorer {
 
 
         JPanel expressionPanel = new JPanel(new BorderLayout());
+        //Splitpane to edit the size of the box where typing happens and the box where the script format of the expression is shown.
         expressionPanel.add(new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, new JScrollPane(scriptTextArea)), BorderLayout.CENTER);
         expressionPanel.add(evaluationLabel, BorderLayout.SOUTH);
         expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
@@ -137,11 +144,19 @@ public class ExpressionNodeExplorer {
 
         frame.setLayout(new BorderLayout());
 
+        //Combines all lefthand components into a single panel on the left;
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.add(tabbedPane, BorderLayout.CENTER);
+        leftPanel.add(commentTextArea, BorderLayout.SOUTH);
+        leftPanel.setMinimumSize(new Dimension(150, 100));
+
+        //Combines all righthand components into a single panel on the right;
         JPanel rightPanel = new JPanel(new BorderLayout());
         rightPanel.add(expressionPanel, BorderLayout.CENTER);
         rightPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, tabbedPane, rightPanel);
+        //Combine the lefthand tabbedPane with tables and comments on all functions with the right panel where expression building takes place
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
         splitPane.setDividerLocation(400);
         splitPane.setResizeWeight(0.5);
 
@@ -152,12 +167,20 @@ public class ExpressionNodeExplorer {
     private void showAddVariableDialog() {
         JTextField nameField = new JTextField(20);
         JTextField defaultValueField = new JTextField(20);
-        JCheckBox updatableCheck = new JCheckBox();
+        JComboBox<String> typeComboBox = new JComboBox<>();
+        DefaultComboBoxModel<String> typeModel = new DefaultComboBoxModel<>();
+        typeModel.addElement("Constant");
+        typeModel.addElement("Updatable Variable");
+        typeModel.addElement("Expression Holder");
+        //TODO: Raise a text error if there are two Final Outputs
+        typeModel.addElement("Final Output");
+        typeComboBox.setModel(typeModel);
+        typeComboBox.setSelectedIndex(0);
         defaultValueField.setEnabled(false);
-        updatableCheck.addActionListener(new ActionListener() {
+        typeComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                defaultValueField.setEnabled(updatableCheck.isSelected());
+                defaultValueField.setEnabled(typeComboBox.getSelectedItem().equals("Updatable Variable"));
             }
         });
 
@@ -186,11 +209,11 @@ public class ExpressionNodeExplorer {
         gc.gridx = 0;
         gc.gridy = 2;
         gc.anchor = GridBagConstraints.LINE_END;
-        panel.add(new JLabel("Updatable?"), gc);
+        panel.add(new JLabel("Variable Type?"), gc);
 
         gc.gridx = 1;
         gc.anchor = GridBagConstraints.LINE_START;
-        panel.add(updatableCheck, gc);
+        panel.add(typeComboBox, gc);
 
         //Dialog Pane creation
         JOptionPane pane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
@@ -206,6 +229,7 @@ public class ExpressionNodeExplorer {
             return;
         }
 
+        //TODO: SUPPORT CREATION OF OTHER NODES BESIDES DOUBLE VARIABLE NODE
         String name = nameField.getText();
         String expression = textBox.getExpression();
         double doubleVal = 0;
@@ -215,20 +239,23 @@ public class ExpressionNodeExplorer {
             //Nothing happens if parseDouble is null
         }
 
-        ExpressionEntry newExp;
-        if (!expression.isEmpty() && !updatableCheck.isSelected()) {
+        ExpressionNode newExp;
+        Object defaultValue;
+        if (!expression.isEmpty() && !typeComboBox.getSelectedItem().equals("Updatable Variable")) {
             try {
-                ExpressionNode expNode = expressionController.parseExpression(expression);
-                newExp = new ExpressionEntry(name, expression, expNode, 0.0);
+                newExp = expressionController.parseExpression(expression);
+                defaultValue = "Unused";
             } catch (Exception ignored) {
                 return;
             }
+        } else if (typeComboBox.getSelectedItem().equals("Updatable Variable")) {
+            newExp = new DoubleVariableNode(name);
+            defaultValue = doubleVal;
         } else {
-            ExpressionNode updatable = new UpdateableLeafNode(name);
-            newExp = new ExpressionEntry(name, "[" + name + "]", updatable, doubleVal);
+            return;
         }
 
-        EditEvent ev = new EditEvent(this, newExp.name(), newExp.expressionNode(), newExp.expression(), newExp.defaultValue());
+        EditEvent ev = new EditEvent(this, name, newExp, expression, typeComboBox.getSelectedItem().toString(), defaultValue);
         expressionController.putExpression(ev);
         variableView.refresh();
     }
@@ -253,7 +280,20 @@ public class ExpressionNodeExplorer {
         scriptText.setWrapStyleWord(true);
         scriptText.setBorder(new EmptyBorder(8, 8, 8, 8));
         scriptText.setText("");
+        scriptText.setBorder(BorderFactory.createTitledBorder("Script Format"));
         return scriptText;
+    }
+
+    private JTextArea createCommentText(){
+        JTextArea commentText = new JTextArea();
+        commentText.setEditable(true);
+        commentText.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        commentText.setLineWrap(true);
+        commentText.setWrapStyleWord(true);
+        commentText.setBorder(new EmptyBorder(8, 8, 8, 8));
+        commentText.setText("");
+        commentText.setBorder(BorderFactory.createTitledBorder("Description"));
+        return commentText;
     }
 
     private void handleTextUpdate(String text) {
@@ -270,9 +310,12 @@ public class ExpressionNodeExplorer {
         }
     }
 
-    private void handleNodeInsertion(DisplayNode descriptor) {
+    private void handleNodeInsertion(DisplayNode descriptor, int clicks) {
         try {
-            textBox.insertNodeAtCursor(descriptor);
+            commentTextArea.setText(descriptor.getDescription());
+            if (clicks == 2) {
+                textBox.insertNodeAtCursor(descriptor);
+            }
         } catch (Exception e) {
             // Fallback: insert the default syntax string directly.
             // This keeps the UI resilient even when constructor reflection fails.
