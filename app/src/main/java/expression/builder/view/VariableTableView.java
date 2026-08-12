@@ -32,9 +32,10 @@ public class VariableTableView extends JPanel {
 
         table.getColumnModel().getColumn(0).setPreferredWidth(55);
         table.getColumnModel().getColumn(1).setPreferredWidth(100);
-        table.getColumnModel().getColumn(2).setPreferredWidth(140);
-        table.getColumnModel().getColumn(3).setPreferredWidth(140);
-        table.getColumnModel().getColumn(4).setPreferredWidth(140);
+        table.getColumnModel().getColumn(2).setPreferredWidth(120);
+        table.getColumnModel().getColumn(3).setPreferredWidth(100);
+        table.getColumnModel().getColumn(4).setPreferredWidth(120);
+        table.getColumnModel().getColumn(5).setPreferredWidth(100);
 
         JMenuItem removeItem = new JMenuItem("Remove row");
         popup.add(removeItem);
@@ -73,7 +74,10 @@ public class VariableTableView extends JPanel {
             table.getSelectionModel().setSelectionInterval(row, row);
 
             if(e.getButton() == MouseEvent.BUTTON1 && listener!=null){
-                listener.getExpression(row);
+                listener.getTextComment(row);
+                if (e.getClickCount() == 2) {
+                    listener.getExpression(row);
+                }
             }
             }
         });

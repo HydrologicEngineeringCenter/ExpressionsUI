@@ -5,6 +5,7 @@ import usace.hec.expressions.ExpressionNode;
 import java.util.EventObject;
 
 public class EditEvent extends EventObject {
+    private String comment;
     private int index;
     private String name;
     private ExpressionNode expression;
@@ -29,22 +30,23 @@ public class EditEvent extends EventObject {
      * @param expression
      * @param expressionString
      */
-    public EditEvent(Object source, String name, ExpressionNode expression, String expressionString, String variableType, Object defaultValue) {
+    public EditEvent(Object source, String name, ExpressionNode expression, String expressionString, String variableType, Object defaultValue, String comment) {
         super(source);
         this.name = name;
         this.expression = expression;
         this.expressionString = expressionString;
         this.defaultValue = defaultValue;
         this.variableType = variableType;
+        this.comment = comment;
     }
-    public EditEvent(Object source,int index, String name, ExpressionNode expression, String expressionString, Object defaultValue) {
-        super(source);
-        this.index = index;
-        this.name = name;
-        this.expression = expression;
-        this.expressionString = expressionString;
-        this.defaultValue = defaultValue;
-    }
+//    public EditEvent(Object source,int index, String name, ExpressionNode expression, String expressionString, Object defaultValue) {
+//        super(source);
+//        this.index = index;
+//        this.name = name;
+//        this.expression = expression;
+//        this.expressionString = expressionString;
+//        this.defaultValue = defaultValue;
+//    }
 
     public int getIndex(){
         return index;
@@ -68,5 +70,9 @@ public class EditEvent extends EventObject {
 
     public String getVariableType() {
         return variableType;
+    }
+
+    public String getComment(){
+        return comment;
     }
 }

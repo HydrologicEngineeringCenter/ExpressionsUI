@@ -6,6 +6,8 @@ import usace.hec.expressions.*;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 
 import expression.builder.model.ExpressionEntry;
 
@@ -21,6 +23,7 @@ public class ExpressionNodeExplorer {
     private JLabel evaluationLabel;
     private JTextArea scriptTextArea;
     private JTextArea commentTextArea;
+    private JTextArea expresssionTextArea;
     private VariableTableView variableView;
     private ExpressionController expressionController;
 
@@ -60,11 +63,30 @@ public class ExpressionNodeExplorer {
 
         commentTextArea = createCommentText();
 
+        expresssionTextArea = createExpressionText();
+
+
         ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, (descriptor, clicks) -> handleNodeInsertion(descriptor, clicks));
 
         treeView.setMinimumSize(new Dimension(150, 100));
 
         tabbedPane.add("Operations", treeView);
+
+        tabbedPane.addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                if (tabbedPane.getSelectedComponent().equals(variableView)) {
+                    commentTextArea.setBorder(BorderFactory.createTitledBorder("Comment"));
+                    commentTextArea.setEditable(true);
+                    expresssionTextArea.setVisible(true);
+                } else {
+                    commentTextArea.setBorder(BorderFactory.createTitledBorder("Description"));
+                    commentTextArea.setEditable(false);
+                    expresssionTextArea.setVisible(false);
+                }
+                commentTextArea.setText("");
+            }
+        });
 
         //Creates right hand side typing textBox and evaluationLabel
 
@@ -86,6 +108,8 @@ public class ExpressionNodeExplorer {
         JPanel buttonPanel = new JPanel(new FlowLayout());
 
         JButton saveButton =  new JButton("Save");
+
+        //creates listener that creates an Add Variable Dialog
         saveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -99,6 +123,7 @@ public class ExpressionNodeExplorer {
 
         buttonPanel.add(saveButton);
 
+        //sets a listener which allows ExpressionNodeExplorer to update if variableView is updated
         variableView.setVariableTableListener(new VariableTableListener() {
             @Override
             public void getExpression(int row) {
@@ -139,6 +164,13 @@ public class ExpressionNodeExplorer {
                 expressionController.removeExpression(row);
                 variableView.refresh();
             }
+
+            @Override
+            public void getTextComment(int row) {
+                ExpressionEntry e = expressionController.getExpression(row);
+                commentTextArea.setText(e.comment());
+                expresssionTextArea.setText(e.expression());
+            }
         });
 
         frame.setLayout(new BorderLayout());
@@ -146,7 +178,14 @@ public class ExpressionNodeExplorer {
         //Combines all lefthand components into a single panel on the left;
         JPanel leftPanel = new JPanel(new BorderLayout());
         leftPanel.add(tabbedPane, BorderLayout.CENTER);
-        leftPanel.add(commentTextArea, BorderLayout.SOUTH);
+
+        //Combine commentTextArea and Expression Text Area before putting into leftPanel
+        JPanel leftText = new JPanel(new BorderLayout());
+        leftText.add(commentTextArea, BorderLayout.NORTH);
+        leftText.add(expresssionTextArea, BorderLayout.SOUTH);
+
+        //Put combined text into leftPanel
+        leftPanel.add(leftText, BorderLayout.SOUTH);
         leftPanel.setMinimumSize(new Dimension(150, 100));
 
         //Combines all righthand components into a single panel on the right;
@@ -164,10 +203,15 @@ public class ExpressionNodeExplorer {
     }
 
     private void showAddVariableDialog() throws Exception {
+        //Initialize dialog box elements
         JTextField nameField = new JTextField(20);
         JTextField defaultValueField = new JTextField(20);
+        JTextArea commentField = new JTextArea(1, 40);
+        commentField.setLineWrap(true);
         JLabel defaultValueLabel = new JLabel("Default Value: ");
         JComboBox<String> typeComboBox = new JComboBox<>();
+
+        //Initilize comboBox (dropdown component along with some listeners)
         DefaultComboBoxModel<String> typeModel = new DefaultComboBoxModel<>();
         typeModel.addElement("Constant");
         typeModel.addElement("Updatable Variable");
@@ -202,6 +246,15 @@ public class ExpressionNodeExplorer {
         gc.gridx = 0;
         gc.gridy = 1;
         gc.anchor = GridBagConstraints.LINE_END;
+        panel.add(new JLabel("Comments: "), gc);
+
+        gc.gridx = 1;
+        gc.anchor = GridBagConstraints.LINE_START;
+        panel.add(commentField, gc);
+
+        gc.gridx = 0;
+        gc.gridy = 2;
+        gc.anchor = GridBagConstraints.LINE_END;
         panel.add(new JLabel("Variable Type?"), gc);
 
         gc.gridx = 1;
@@ -209,7 +262,7 @@ public class ExpressionNodeExplorer {
         panel.add(typeComboBox, gc);
 
         gc.gridx = 0;
-        gc.gridy = 2;
+        gc.gridy = 3;
         gc.anchor = GridBagConstraints.LINE_END;
         panel.add(defaultValueLabel, gc);
 
@@ -221,7 +274,8 @@ public class ExpressionNodeExplorer {
         JOptionPane pane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
         JDialog dialog = pane.createDialog("Add Variable");
         dialog.setResizable(true);
-        dialog.setMinimumSize(new Dimension(400,200));
+        //prevent textBoxes from shrinkng
+        dialog.setMinimumSize(new Dimension(500,200));
         dialog.setVisible(true);
 
         Object selected = pane.getValue();
@@ -234,6 +288,8 @@ public class ExpressionNodeExplorer {
 
         String name = nameField.getText();
         String expression = textBox.getExpression();
+        //TODO: Allow comment editing
+        String comment = commentField.getText();
         ExpressionNode defaultValueEvaluate = defaultValueField.getText().isEmpty() ? new DoubleConstantNode(0.0) : expressionController.parseExpression(defaultValueField.getText());
         Object defaultValue;
         String varType = (String) typeComboBox.getSelectedItem();
@@ -243,7 +299,7 @@ public class ExpressionNodeExplorer {
         if (!expression.isEmpty() && !varType.equals("Updatable Variable")) {
             try {
                 newExp = expressionController.parseExpression(expression);
-                defaultValue = "Unused";
+                defaultValue = "";
             } catch (Exception ignored) {
                 return;
             }
@@ -262,7 +318,7 @@ public class ExpressionNodeExplorer {
             return;
         }
 
-        EditEvent ev = new EditEvent(this, name, newExp, expression, varType, defaultValue);
+        EditEvent ev = new EditEvent(this, name, newExp, expression, varType, defaultValue, comment);
         expressionController.putExpression(ev);
         variableView.refresh();
     }
@@ -278,6 +334,7 @@ public class ExpressionNodeExplorer {
         return label;
     }
 
+    //TODO: create a generic JTextArea creator with string input to dictate border
     private JTextArea createScriptText(){
         JTextArea scriptText = new JTextArea();
         scriptText.setEditable(false);
@@ -293,7 +350,7 @@ public class ExpressionNodeExplorer {
 
     private JTextArea createCommentText(){
         JTextArea commentText = new JTextArea();
-        commentText.setEditable(true);
+        commentText.setEditable(false);
         commentText.setFont(new Font("Monospaced", Font.PLAIN, 14));
         commentText.setLineWrap(true);
         commentText.setWrapStyleWord(true);
@@ -303,6 +360,19 @@ public class ExpressionNodeExplorer {
         return commentText;
     }
 
+    private JTextArea createExpressionText() {
+        JTextArea commentText = new JTextArea();
+        commentText.setEditable(false);
+        commentText.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        commentText.setLineWrap(true);
+        commentText.setWrapStyleWord(true);
+        commentText.setBorder(new EmptyBorder(8, 8, 8, 8));
+        commentText.setText("");
+        commentText.setBorder(BorderFactory.createTitledBorder("Expanded Expression"));
+        return commentText;
+    }
+
+    //called for every update in ExpressionPreview
     private void handleTextUpdate(String text) {
         try {
             if (!text.isEmpty()) {
@@ -317,6 +387,7 @@ public class ExpressionNodeExplorer {
         }
     }
 
+    //Inserts nodes into ExpressionPreview when tree components are clicked
     private void handleNodeInsertion(DisplayNode descriptor, int clicks) {
         try {
             commentTextArea.setText(descriptor.getDescription());
@@ -339,6 +410,7 @@ public class ExpressionNodeExplorer {
         }
     }
 
+    //Called when ExpressionPreview is edited
     private void updateEvaluationLabel() {
         if (currentExpression == null) {
             evaluationLabel.setText("Evaluation: N/A");
@@ -353,6 +425,8 @@ public class ExpressionNodeExplorer {
             handleError(e, "Evaluation Error");
         }
     }
+
+    //Also called when ExpressionPreview is edited
     private void updateScriptTextArea(String text) {
         if (currentExpression == null) {
             scriptTextArea.setText("N/A");
@@ -382,7 +456,7 @@ public class ExpressionNodeExplorer {
 
 
 
-
+    //Error handling method to update evaluationLabel
     private void handleError(Exception e, String context) {
         String msg = e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
         if (e.getCause() != null) {

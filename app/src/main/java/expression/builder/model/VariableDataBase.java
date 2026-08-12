@@ -42,6 +42,10 @@ public class VariableDataBase {
         expressions.remove(index);
     }
 
+    public ExpressionEntry getExpression(int index) {
+        return expressions.get(index);
+    }
+
     /**
      * allows other Panels to access the array but not modify them, all components will have to use {@link expression.builder.controller.ExpressionController}
      * to modify VariableDataBase
