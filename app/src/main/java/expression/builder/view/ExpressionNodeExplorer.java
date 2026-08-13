@@ -67,9 +67,9 @@ public class ExpressionNodeExplorer {
 
         variableView.setData(expressionController.getExpressions());
 
-        commentTextArea = createCommentText();
+        commentTextArea = createGenericText("Description");
 
-        expresssionTextArea = createExpressionText();
+        expresssionTextArea = createGenericText("Expanded Expression");
 
         expresssionTextArea.setVisible(false);
         commentTextArea.setVisible(false);
@@ -106,7 +106,7 @@ public class ExpressionNodeExplorer {
         textBox = new ExpressionNodeTextBox();
         textBox.setTextUpdateListener(this::handleTextUpdate);
         evaluationLabel = createEvaluationLabel();
-        scriptTextArea = createScriptText();
+        scriptTextArea = createGenericText("Script Format");
 
 
         JPanel expressionPanel = new JPanel(new BorderLayout());
@@ -252,42 +252,17 @@ public class ExpressionNodeExplorer {
         return label;
     }
 
-    //TODO: create a generic JTextArea creator with string input to dictate border
-    private JTextArea createScriptText(){
-        JTextArea scriptText = new JTextArea();
-        scriptText.setEditable(false);
-        scriptText.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        scriptText.setBackground(new Color(245, 245, 245));
-        scriptText.setLineWrap(true);
-        scriptText.setWrapStyleWord(true);
-        scriptText.setBorder(new EmptyBorder(8, 8, 8, 8));
-        scriptText.setText(STRING_EMPTY);
-        scriptText.setBorder(BorderFactory.createTitledBorder("Script Format"));
-        return scriptText;
-    }
-
-    private JTextArea createCommentText(){
-        JTextArea commentText = new JTextArea();
-        commentText.setEditable(false);
-        commentText.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        commentText.setLineWrap(true);
-        commentText.setWrapStyleWord(true);
-        commentText.setBorder(new EmptyBorder(8, 8, 8, 8));
-        commentText.setText(STRING_EMPTY);
-        commentText.setBorder(BorderFactory.createTitledBorder("Description"));
-        return commentText;
-    }
-
-    private JTextArea createExpressionText() {
-        JTextArea expressionText = new JTextArea();
-        expressionText.setEditable(false);
-        expressionText.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        expressionText.setLineWrap(true);
-        expressionText.setWrapStyleWord(true);
-        expressionText.setBorder(new EmptyBorder(8, 8, 8, 8));
-        expressionText.setText(STRING_EMPTY);
-        expressionText.setBorder(BorderFactory.createTitledBorder("Expanded Expression"));
-        return expressionText;
+    private JTextArea createGenericText(String name) {
+        JTextArea genericText = new JTextArea();
+        genericText.setEditable(false);
+        genericText.setFont(new Font("Monospaced", Font.PLAIN, 14));
+        genericText.setBackground(new Color(245, 245, 245));
+        genericText.setLineWrap(true);
+        genericText.setWrapStyleWord(true);
+        genericText.setBorder(new EmptyBorder(8, 8, 8, 8));
+        genericText.setText(STRING_EMPTY);
+        genericText.setBorder(BorderFactory.createTitledBorder(name));
+        return genericText;
     }
 
     //called for every update in ExpressionPreview
