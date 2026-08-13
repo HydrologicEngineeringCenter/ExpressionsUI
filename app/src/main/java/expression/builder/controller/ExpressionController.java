@@ -40,9 +40,17 @@ public class ExpressionController {
         db.removeExpression(index);
     }
 
+    /**
+     * Panels use this method to get a single expression.
+     * @param index
+     */
+    public ExpressionEntry getExpression(int index) {
+        return db.getExpression(index);
+    }
+
     public void putExpression(EditEvent ev) throws Exception {
         int index = db.findName(ev.getName());
-        ExpressionEntry entry = new ExpressionEntry(ev.getName(), ev.getExpressionString(), ev.getExpression(), ev.getVariableType(), ev.getDefaultValue());
+        ExpressionEntry entry = new ExpressionEntry(ev.getName(), ev.getExpressionString(), ev.getExpression(), ev.getVariableType(), ev.getDefaultValue(), ev.getComment());
         //Initialize ExpressionNode
         switch (entry.expressionNode().resultType()) {
                 case ExpressionType.DOUBLE -> dh.setDouble(ev.getName(), entry.variableType().equals("Updatable Variable")? (double) entry.defaultValue() : (double) evaluateSafely(entry.expressionNode()));

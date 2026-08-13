@@ -32,12 +32,15 @@ public class VariableTableView extends JPanel {
 
         table.getColumnModel().getColumn(0).setPreferredWidth(55);
         table.getColumnModel().getColumn(1).setPreferredWidth(100);
-        table.getColumnModel().getColumn(2).setPreferredWidth(140);
-        table.getColumnModel().getColumn(3).setPreferredWidth(140);
-        table.getColumnModel().getColumn(4).setPreferredWidth(140);
+        table.getColumnModel().getColumn(2).setPreferredWidth(120);
+        table.getColumnModel().getColumn(3).setPreferredWidth(100);
+        table.getColumnModel().getColumn(4).setPreferredWidth(120);
+        table.getColumnModel().getColumn(5).setPreferredWidth(100);
 
         JMenuItem removeItem = new JMenuItem("Remove row");
+        JMenuItem editItem = new JMenuItem("Edit row");
         popup.add(removeItem);
+        popup.add(editItem);
 
         //popup appears when right clicking
         table.addMouseListener(new MouseAdapter() {
@@ -50,6 +53,8 @@ public class VariableTableView extends JPanel {
                 if(e.getButton() == MouseEvent.BUTTON3){
                     popup.show(table, e.getX(),e.getY());
                 }
+
+                if (listener != null) listener.getTextComment(row);
             }
         });
 
@@ -65,6 +70,18 @@ public class VariableTableView extends JPanel {
             }
         });
 
+        //helps to edit a row from table
+        editItem.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                int row = table.getSelectedRow();
+
+                if (listener!=null){
+                    listener.editRequested(row);
+                }
+            }
+        });
+
         table.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -73,7 +90,10 @@ public class VariableTableView extends JPanel {
             table.getSelectionModel().setSelectionInterval(row, row);
 
             if(e.getButton() == MouseEvent.BUTTON1 && listener!=null){
-                listener.getExpression(row);
+                listener.getTextComment(row);
+                if (e.getClickCount() == 2) {
+                    listener.getExpressionText(row);
+                }
             }
             }
         });
