@@ -10,12 +10,14 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import expression.builder.model.ExpressionEntry;
+import expression.builder.util.ExpressionFormatter;
+
 
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 public class ExpressionNodeExplorer {
     private final static String STRING_EMPTY = "";
@@ -220,150 +222,25 @@ public class ExpressionNodeExplorer {
     }
 
     private void showAddVariableDialog() throws Exception {
-        //Initialize dialog box elements
-        JTextField nameField = new JTextField(20);
-        JTextField defaultValueField = new JTextField(20);
-        JTextArea commentField = new JTextArea(1, 40);
-        commentField.setLineWrap(true);
-        JLabel defaultValueLabel = new JLabel("Default Value: ");
-        JComboBox<String> typeComboBox = new JComboBox<>();
+        AddVariableDialog.Result prefill = editRequested
+                ? new AddVariableDialog.Result(editingName, editingComment, editingType, editingDefaults)
+                : null;
 
-        //Initilize comboBox (dropdown component along with some listeners)
-        DefaultComboBoxModel<String> typeModel = new DefaultComboBoxModel<>();
-        typeModel.addElement("Constant");
-        typeModel.addElement("Updatable Variable");
-        typeModel.addElement("Expression Holder");
-        //TODO: Raise a text error if there are two Final Outputs
-        typeModel.addElement("Final Output");
-        typeComboBox.setModel(typeModel);
-        typeComboBox.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                defaultValueField.setVisible(typeComboBox.getSelectedItem().equals("Updatable Variable"));
-                defaultValueLabel.setVisible(typeComboBox.getSelectedItem().equals("Updatable Variable"));
-            }
-        });
-
-        //Initialize Dialog Box if an edit is requested
-        if (editRequested) {
-            nameField.setText(editingName);
-            defaultValueLabel.setText(editingDefaults);
-            commentField.setText(editingComment);
-            for (int i = 0; i < typeComboBox.getItemCount(); i++){
-                if (typeComboBox.getItemAt(i).equals(editingType)){
-                    typeComboBox.setSelectedIndex(i);
-                    if (i == 1){
-                        defaultValueField.setVisible(true);
-                        defaultValueLabel.setVisible(true);
-                    }
-                }
-            }
-        } else {
-            nameField.setText(STRING_EMPTY);
-            defaultValueLabel.setText(STRING_EMPTY);
-            commentField.setText(STRING_EMPTY);
-            typeComboBox.setSelectedIndex(0);
-            defaultValueField.setVisible(false);
-            defaultValueLabel.setVisible(false);
-        }
-
-        JPanel panel = new JPanel(new GridBagLayout());
-        GridBagConstraints gc = new GridBagConstraints();
-        gc.insets = new Insets(4, 4, 4, 4);
-
-        gc.gridx = 0;
-        gc.gridy = 0;
-        gc.anchor = GridBagConstraints.LINE_END;
-        panel.add(new JLabel("Name: "), gc);
-
-        gc.gridx = 1;
-        gc.anchor = GridBagConstraints.LINE_START;
-        panel.add(nameField, gc);
-
-        //Next Row
-        gc.gridx = 0;
-        gc.gridy = 1;
-        gc.anchor = GridBagConstraints.LINE_END;
-        panel.add(defaultValueLabel, gc);
-
-        gc.gridx = 1;
-        gc.anchor = GridBagConstraints.LINE_START;
-        panel.add(defaultValueField, gc);
-
-
-
-        //Next Row
-        gc.gridx = 0;
-        gc.gridy = 2;
-        gc.anchor = GridBagConstraints.LINE_END;
-        panel.add(new JLabel("Comments: "), gc);
-
-        gc.gridx = 1;
-        gc.anchor = GridBagConstraints.LINE_START;
-        panel.add(commentField, gc);
-
-
-        //Next Row
-        gc.gridx = 0;
-        gc.gridy = 3;
-        gc.anchor = GridBagConstraints.LINE_END;
-        panel.add(new JLabel("Variable Type?"), gc);
-
-        gc.gridx = 1;
-        gc.anchor = GridBagConstraints.LINE_START;
-        panel.add(typeComboBox, gc);
-
-        //Dialog Pane creation
-        JOptionPane pane = new JOptionPane(panel, JOptionPane.PLAIN_MESSAGE, JOptionPane.OK_CANCEL_OPTION);
-        JDialog dialog = pane.createDialog("Add Variable");
-        dialog.setResizable(true);
-        //prevent textBoxes from shrinkng
-        dialog.setMinimumSize(new Dimension(500,200));
-        dialog.setVisible(true);
-
-        Object selected = pane.getValue();
-        //check if OK was selected, return CLOSED_OPTION if any other action was taken to close the dialog.
-        int result = (selected instanceof Integer) ? (Integer) selected : JOptionPane.CLOSED_OPTION;
-
-        if (result != JOptionPane.OK_OPTION || nameField.getText().isEmpty()) {
-            editRequested = false;
+        Optional<AddVariableDialog.Result> formInput = AddVariableDialog.show(prefill);
+        editRequested = false;
+        if (formInput.isEmpty()) {
             return;
         }
 
-        String name = nameField.getText();
+        AddVariableDialog.Result form = formInput.get();
         String expression = textBox.getExpression();
-        String comment = commentField.getText();
-        ExpressionNode defaultValueEvaluate = defaultValueField.getText().isEmpty() ? new DoubleConstantNode(0.0) : expressionController.parseExpression(defaultValueField.getText());
-        Object defaultValue;
-        String varType = (String) typeComboBox.getSelectedItem();
-        assert varType != null;
 
-        ExpressionNode newExp;
-        if (!expression.isEmpty() && !varType.equals("Updatable Variable")) {
-            try {
-                newExp = expressionController.parseExpression(expression);
-                defaultValue = STRING_EMPTY;
-            } catch (Exception ignored) {
-                return;
-            }
-        } else if (varType.equals("Updatable Variable")) {
-            switch (defaultValueEvaluate.resultType()){
-                //These don't actually create usable VariableNodes, constructed here for clarification on what kind of node is being added
-                case ExpressionType.DOUBLE -> newExp = new DoubleVariableNode(STRING_EMPTY);
-                case ExpressionType.BOOLEAN -> newExp = new BooleanVariableNode(STRING_EMPTY);
-                case ExpressionType.INTEGER -> newExp = new IntegerVariableNode(STRING_EMPTY);
-                case ExpressionType.STRING -> newExp = new StringVariableNode(STRING_EMPTY);
-                case ExpressionType.DATE -> newExp = new DateTimeVariableNode(STRING_EMPTY);
-                default -> throw new RuntimeException("Invalid Default Value");
-            }
-            expression = "[" + name + "]";
-            defaultValue = expressionController.evaluateSafely(defaultValueEvaluate);
-        } else {
+        EditEvent ev = expressionController.createEditEvent(this, form.name(), expression, form.comment(), form.variableType(), form.defaultValue());
+        if (ev == null) {
             editRequested = false;
             return;
         }
 
-        EditEvent ev = new EditEvent(this, name, newExp, expression, varType, defaultValue, comment);
         expressionController.putExpression(ev);
         variableView.refresh();
         editRequested = false;
@@ -478,25 +355,7 @@ public class ExpressionNodeExplorer {
             scriptTextArea.setText("N/A");
         }
         else {
-            StringBuilder sb = new StringBuilder();
-            int depth = 0;
-            for (char c : text.toCharArray()) {
-                if (c == '(') {
-                    sb.append(c);
-                    depth++;
-                    sb.append('\n').append("\t".repeat(depth));
-                } else if (c == ')') {
-                    depth--;
-                    sb.append(c);
-                    sb.append('\n').append("\t".repeat(Math.max(0, depth)));
-                } else if (c == ',') {
-                    sb.append(c);
-                    sb.append('\n').append("\t".repeat(Math.max(0, depth)));
-                } else {
-                    sb.append(c);
-                }
-            }
-            scriptTextArea.setText(sb.toString());
+            scriptTextArea.setText(ExpressionFormatter.scriptPrint(text));
         }
     }
 
