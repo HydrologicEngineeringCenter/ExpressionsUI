@@ -43,7 +43,7 @@ public final class AddVariableDialog {
         //Initialize Dialog Box if an edit is requested
         if (prefill != null) {
             nameField.setText(prefill.name());
-            defaultValueLabel.setText(prefill.defaultValue());
+            defaultValueField.setText(prefill.defaultValue());
             commentField.setText(prefill.comment());
             for (int i = 0; i < typeComboBox.getItemCount(); i++) {
                 if (typeComboBox.getItemAt(i).equals(prefill.variableType())) {
@@ -56,7 +56,7 @@ public final class AddVariableDialog {
             }
         } else {
             nameField.setText("");
-            defaultValueLabel.setText("");
+            defaultValueField.setText("");
             commentField.setText("");
             typeComboBox.setSelectedIndex(0);
             defaultValueField.setVisible(false);

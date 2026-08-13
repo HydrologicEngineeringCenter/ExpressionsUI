@@ -30,12 +30,8 @@ public class ExpressionNodeExplorer {
     private VariableTableView variableView;
     private ExpressionController expressionController;
 
-    //String components for setting all textboxes when someone uses the editMenu in popups
-    private String editingName;
-    private String editingComment;
-    private String editingType;
-    private String editingDefaults;
-    private boolean editRequested = false;
+    //Set when the editMenu popup requests an edit; carried through to prefill the next Add/Edit Variable dialog.
+    private AddVariableDialog.Result pendingEdit;
 
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
@@ -75,6 +71,9 @@ public class ExpressionNodeExplorer {
 
         expresssionTextArea = createExpressionText();
 
+        expresssionTextArea.setVisible(false);
+        commentTextArea.setVisible(false);
+
 
         ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, (descriptor, clicks) -> handleNodeInsertion(descriptor, clicks));
 
@@ -86,13 +85,19 @@ public class ExpressionNodeExplorer {
             @Override
             public void stateChanged(ChangeEvent e) {
                 if (tabbedPane.getSelectedComponent().equals(variableView)) {
+                    commentTextArea.setVisible(true);
                     commentTextArea.setBorder(BorderFactory.createTitledBorder("Comment"));
                     expresssionTextArea.setVisible(true);
-                } else {
+                } else if (tabbedPane.getSelectedComponent().equals(treeView)){
                     commentTextArea.setBorder(BorderFactory.createTitledBorder("Description"));
+                    commentTextArea.setVisible(true);
+                    expresssionTextArea.setVisible(false);
+                } else {
+                    commentTextArea.setVisible(false);
                     expresssionTextArea.setVisible(false);
                 }
                 commentTextArea.setText(STRING_EMPTY);
+                expresssionTextArea.setText(STRING_EMPTY);
             }
         });
 
@@ -176,12 +181,8 @@ public class ExpressionNodeExplorer {
             @Override
             public void editRequested(int row){
                 ExpressionEntry e = expressionController.getExpression(row);
-                editingName = e.name();
-                editingComment = e.comment();
-                editingType = e.variableType();
-                editingDefaults = e.defaultValue().toString();
-                editRequested = true;
-                textBox.setExpressionNodeText(e.expressionNode());
+                pendingEdit = new AddVariableDialog.Result(e.name(), e.comment(), e.variableType(), e.defaultValue().toString());
+                if (!e.variableType().equals("Updatable Variable")) textBox.setExpressionNodeText(e.expressionNode());
             }
 
             @Override
@@ -222,12 +223,8 @@ public class ExpressionNodeExplorer {
     }
 
     private void showAddVariableDialog() throws Exception {
-        AddVariableDialog.Result prefill = editRequested
-                ? new AddVariableDialog.Result(editingName, editingComment, editingType, editingDefaults)
-                : null;
-
-        Optional<AddVariableDialog.Result> formInput = AddVariableDialog.show(prefill);
-        editRequested = false;
+        Optional<AddVariableDialog.Result> formInput = AddVariableDialog.show(pendingEdit);
+        pendingEdit = null;
         if (formInput.isEmpty()) {
             return;
         }
@@ -237,13 +234,11 @@ public class ExpressionNodeExplorer {
 
         EditEvent ev = expressionController.createEditEvent(this, form.name(), expression, form.comment(), form.variableType(), form.defaultValue());
         if (ev == null) {
-            editRequested = false;
             return;
         }
 
         expressionController.putExpression(ev);
         variableView.refresh();
-        editRequested = false;
     }
 
 

@@ -56,18 +56,13 @@ public class ExpressionNodeTextBox extends JPanel {
 
     public void setExpressionNodeText(ExpressionNode node){
         isProgrammaticUpdate = true;
-        String syntax;
-        if (infixSyntax){
-            syntax = node.ExcelSyntax();
-        } else {
-            syntax = node.PreFixSyntax();
-        }
-        textArea.setText(syntax);
+        textArea.setText(syntaxFor(node));
         textArea.setCaretPosition(0);
         isProgrammaticUpdate = false;
     }
 
     public void insertNodeAtCursor(DisplayNode node) {
+        isProgrammaticUpdate = true;
         if (node == null) return;
         String syntax;
         try {
@@ -76,20 +71,23 @@ public class ExpressionNodeTextBox extends JPanel {
             syntax = node.displayName(false) + "()";
         }
         insertTextAtCursor(syntax);
+        isProgrammaticUpdate = false;
     }
 
     public void insertExpressionAtCursor(ExpressionNode variable) {
         if (variable == null) return;
-        if (infixSyntax){
-            insertTextAtCursor(variable.ExcelSyntax());
-        } else {
-            insertTextAtCursor(variable.PreFixSyntax());
-        }
+        insertTextAtCursor(syntaxFor(variable));
     }
 
     public void insertVariableAtCursor(ExpressionEntry e){
+        isProgrammaticUpdate = true;
         if (e == null) return;
         insertTextAtCursor("[" + e.name() + "]");
+        isProgrammaticUpdate = false;
+    }
+
+    private String syntaxFor(ExpressionNode node) {
+        return infixSyntax ? node.ExcelSyntax() : node.PreFixSyntax();
     }
 
     /**
