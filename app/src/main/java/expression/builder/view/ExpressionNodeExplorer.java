@@ -191,6 +191,12 @@ public class ExpressionNodeExplorer {
                 commentTextArea.setText(e.comment());
                 expresssionTextArea.setText(e.expression());
             }
+
+            @Override
+            public void rowMoved(int fromRow, int toRow) {
+                expressionController.moveExpression(fromRow, toRow);
+                variableView.refresh();
+            }
         });
 
         frame.setLayout(new BorderLayout());

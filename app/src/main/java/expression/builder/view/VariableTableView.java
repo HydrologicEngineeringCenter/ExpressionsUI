@@ -6,10 +6,14 @@ import expression.builder.model.VariableTableModel;
 import javax.swing.*;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
 import java.util.List;
 
 public class VariableTableView extends JPanel {
@@ -27,6 +31,10 @@ public class VariableTableView extends JPanel {
         model = new VariableTableModel();
         table = new JTable(model);
         popup = new JPopupMenu();
+
+        table.setDragEnabled(true);
+        table.setDropMode(DropMode.INSERT_ROWS);
+        table.setTransferHandler(new RowReorderHandler());
 
         table.getColumnModel().getColumn(0).setPreferredWidth(55);
         table.getColumnModel().getColumn(1).setPreferredWidth(100);
@@ -120,6 +128,71 @@ public class VariableTableView extends JPanel {
             sorter = new TableRowSorter<>(model);
             table.setRowSorter(sorter);
             add(new TableSearchBar("ExpressionNode Explorer", "Filter by name, operator, or category...", sorter), BorderLayout.NORTH);
+        }
+    }
+
+    private boolean filterActive() {
+        return sorter != null && sorter.getRowFilter() != null;
+    }
+
+    /**
+     * Row reordering is only enabled while the search bar's filter is inactive — filtered means the
+     * view's row order no longer matches the model's, so a drop location wouldn't mean what it looks like.
+     */
+    private class RowReorderHandler extends TransferHandler {
+        private static final DataFlavor ROW_INDEX_FLAVOR = new DataFlavor(Integer.class, "Row index");
+
+        @Override
+        public int getSourceActions(JComponent c) {
+            return filterActive() ? TransferHandler.NONE : TransferHandler.MOVE;
+        }
+
+        @Override
+        protected Transferable createTransferable(JComponent c) {
+            int selectedRow = table.getSelectedRow();
+            return selectedRow < 0 ? null : new RowIndexTransferable(selectedRow);
+        }
+
+        @Override
+        public boolean canImport(TransferSupport support) {
+            return !filterActive() && support.isDrop() && support.isDataFlavorSupported(ROW_INDEX_FLAVOR);
+        }
+
+        @Override
+        public boolean importData(TransferSupport support) {
+            if (!canImport(support)) return false;
+            try {
+                int fromRow = (int) support.getTransferable().getTransferData(ROW_INDEX_FLAVOR);
+                int toRow = Math.min(((JTable.DropLocation) support.getDropLocation()).getRow(), table.getRowCount());
+                if (listener != null) listener.rowMoved(fromRow, toRow);
+                return true;
+            } catch (UnsupportedFlavorException | IOException e) {
+                return false;
+            }
+        }
+    }
+
+    private static class RowIndexTransferable implements Transferable {
+        private final Integer rowIndex;
+
+        RowIndexTransferable(int rowIndex) {
+            this.rowIndex = rowIndex;
+        }
+
+        @Override
+        public DataFlavor[] getTransferDataFlavors() {
+            return new DataFlavor[]{RowReorderHandler.ROW_INDEX_FLAVOR};
+        }
+
+        @Override
+        public boolean isDataFlavorSupported(DataFlavor flavor) {
+            return RowReorderHandler.ROW_INDEX_FLAVOR.equals(flavor);
+        }
+
+        @Override
+        public Object getTransferData(DataFlavor flavor) throws UnsupportedFlavorException {
+            if (!isDataFlavorSupported(flavor)) throw new UnsupportedFlavorException(flavor);
+            return rowIndex;
         }
     }
 }

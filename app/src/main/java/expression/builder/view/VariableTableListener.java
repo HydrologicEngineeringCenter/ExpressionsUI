@@ -5,4 +5,5 @@ public interface VariableTableListener {
     public void rowDeleted(int row);
     void getTextComment(int row);
     void editRequested(int row);
+    void rowMoved(int fromRow, int toRow);
 }

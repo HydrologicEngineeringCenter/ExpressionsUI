@@ -48,6 +48,10 @@ public class ExpressionController {
         return db.getExpression(index);
     }
 
+    public void moveExpression(int from, int to) {
+        db.moveExpression(from, to);
+    }
+
     public void putExpression(EditEvent ev) throws Exception {
         int index = db.findName(ev.getName());
         ExpressionEntry entry = new ExpressionEntry(ev.getName(), ev.getExpressionString(), ev.getExpression(), ev.getVariableType(), ev.getDefaultValue(), ev.getComment());
@@ -113,7 +117,6 @@ public class ExpressionController {
      * On compute time, create a {@link Map} that maps each expression entry's name to the {@link ExpressionNode} to allow for any ExpressionNode to refer to other ExpressionNode's by name.
      * @return
      */
-    //TODO: implementation currently does not use map the last entry to use it to return finalized value. Allow users to choose variable to return later
     public Map<String, ExpressionNode> getExpressionNodesByName() {
         List<ExpressionEntry> myList = db.getExpressions();
         return db.getExpressions().stream().limit(myList.size())
