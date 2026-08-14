@@ -54,6 +54,7 @@ public class VariableTableView extends JPanel {
         popup.add(removeItem);
         popup.add(editItem);
 
+        //first click and hold allows for row dragging
         table.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseDragged(MouseEvent e) {
@@ -168,6 +169,9 @@ public class VariableTableView extends JPanel {
             return c;
         }
     }
+
+    //ROW DRAGGING LOGIC BELOW, NOT NECESSARY TO UNDERSTAND (Swing library takes care of things)
+
 
     /**
      * Row reordering is only enabled while the search bar's filter is inactive — filtered means the
