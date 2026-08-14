@@ -85,10 +85,12 @@ public class ExpressionNodeTextBox extends JPanel {
     }
 
     public void insertVariableAtCursor(ExpressionEntry e){
-        isProgrammaticUpdate = true;
         if (e == null) return;
-        insertTextAtCursor("[" + e.name() + "]");
-        isProgrammaticUpdate = false;
+        String text = "[" + e.name() + "]";
+        insertTextAtCursor(text);
+        if (textUpdateListener!=null){
+            textUpdateListener.onTextUpdated(text);
+        }
     }
 
     private String syntaxFor(ExpressionNode node) {
