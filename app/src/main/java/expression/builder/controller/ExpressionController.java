@@ -67,6 +67,49 @@ public class ExpressionController {
     }
 
     /**
+     * Builds the {@link EditEvent} for the Add/Edit Variable dialog's form input: parses the typed expression (or default value) and picks the matching placeholder {@link ExpressionNode} type.
+     * @return the event to pass to {@link #putExpression}, or {@code null} if there is nothing to save
+     */
+    public EditEvent createEditEvent(Object source, String name, String expressionText, String comment, String variableType, String defaultValueText) throws Exception {
+        ExpressionNode defaultValueEvaluate;
+        try {
+            defaultValueEvaluate = defaultValueText.isEmpty() ? new DoubleConstantNode(0.0) : parseExpression(defaultValueText);
+        } catch (Exception illegalExpression) {
+            return null;
+        }
+        Object defaultValue;
+        ExpressionNode newExp;
+
+        if (!expressionText.isEmpty() && !variableType.equals("Updatable Variable")) {
+            try {
+                newExp = parseExpression(expressionText);
+                defaultValue = "";
+            } catch (Exception ignored) {
+                return null;
+            }
+        } else if (variableType.equals("Updatable Variable")) {
+            switch (defaultValueEvaluate.resultType()) {
+                //These don't actually create usable VariableNodes, constructed here for clarification on what kind of node is being added
+                case ExpressionType.DOUBLE -> newExp = new DoubleVariableNode("");
+                case ExpressionType.BOOLEAN -> newExp = new BooleanVariableNode("");
+                case ExpressionType.INTEGER -> newExp = new IntegerVariableNode("");
+                case ExpressionType.STRING -> newExp = new StringVariableNode("");
+                case ExpressionType.DATE -> newExp = new DateTimeVariableNode("");
+                default -> throw new RuntimeException("Invalid Default Value");
+            }
+            expressionText = "[" + name + "]";
+            defaultValue = evaluateSafely(defaultValueEvaluate);
+            if (defaultValue == null) {
+                return null;
+            }
+        } else {
+            return null;
+        }
+
+        return new EditEvent(source, name, newExp, expressionText, variableType, defaultValue, comment);
+    }
+
+    /**
      * On compute time, create a {@link Map} that maps each expression entry's name to the {@link ExpressionNode} to allow for any ExpressionNode to refer to other ExpressionNode's by name.
      * @return
      */

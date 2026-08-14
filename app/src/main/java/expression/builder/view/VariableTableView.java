@@ -4,8 +4,6 @@ import expression.builder.model.ExpressionEntry;
 import expression.builder.model.VariableTableModel;
 
 import javax.swing.*;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import javax.swing.table.TableRowSorter;
 import java.awt.*;
 import java.awt.event.ActionEvent;
@@ -101,20 +99,6 @@ public class VariableTableView extends JPanel {
         add(new JScrollPane(table), BorderLayout.CENTER);
     }
 
-    private void setupPrompt(JTextField field, String prompt) {
-        field.setText(prompt);
-        field.setForeground(Color.GRAY);
-        field.addFocusListener(new java.awt.event.FocusAdapter() {
-            @Override public void focusGained(java.awt.event.FocusEvent e) {
-                if (field.getText().equals(prompt)) { field.setText(""); field.setForeground(Color.BLACK); }
-            }
-            @Override public void focusLost(java.awt.event.FocusEvent e) {
-                if (field.getText().isEmpty()) { field.setText(prompt); field.setForeground(Color.GRAY); }
-            }
-        });
-    }
-
-
     public void setVariableTableListener(VariableTableListener listener){
         this.listener = listener;
     }
@@ -135,55 +119,7 @@ public class VariableTableView extends JPanel {
         if (!dataSet) {
             sorter = new TableRowSorter<>(model);
             table.setRowSorter(sorter);
-
-
-            JTextField searchField = new JTextField(20);
-            setupPrompt(searchField, "Find a variable...");
-
-            searchField.getDocument().addDocumentListener(new DocumentListener() {
-                @Override
-                public void insertUpdate(DocumentEvent e) {
-                    applyFilter();
-                }
-
-                @Override
-                public void removeUpdate(DocumentEvent e) {
-                    applyFilter();
-                }
-
-                @Override
-                public void changedUpdate(DocumentEvent e) {
-                    applyFilter();
-                }
-
-                private void applyFilter() {
-                    String text = searchField.getText();
-                    if (text.isEmpty() || text.equals("Find a variable...")) {
-                        sorter.setRowFilter(null);
-                    } else {
-                        String lower = text.toLowerCase();
-                        sorter.setRowFilter(new RowFilter<VariableTableModel, Integer>() {
-                            @Override
-                            public boolean include(Entry entry) {
-                                int row = (int) entry.getIdentifier();
-                                for (int i = 0; i < model.getColumnCount(); i++) {
-                                    if (String.valueOf(model.getValueAt(row, i)).toLowerCase().contains(lower)) {
-                                        return true;
-                                    }
-                                }
-                                return false;
-                            }
-                        });
-                    }
-                }
-            });
-
-            JPanel controls = new JPanel(new BorderLayout(10, 5));
-            controls.setBorder(BorderFactory.createEmptyBorder(8, 8, 4, 8));
-            controls.add(new JLabel("ExpressionNode Explorer"), BorderLayout.WEST);
-            controls.add(searchField, BorderLayout.CENTER);
-
-            add(controls, BorderLayout.NORTH);
+            add(new TableSearchBar("ExpressionNode Explorer", "Filter by name, operator, or category...", sorter), BorderLayout.NORTH);
         }
     }
 }
