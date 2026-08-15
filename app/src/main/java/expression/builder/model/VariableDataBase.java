@@ -42,6 +42,19 @@ public class VariableDataBase {
         expressions.remove(index);
     }
 
+    /**
+     * Moves the entry at {@code from} so it lands at {@code to}, where {@code to} is measured in the
+     * list's index space <em>before</em> the move (e.g. straight from a drag-and-drop drop location).
+     */
+    public void moveExpression(int from, int to) {
+        ExpressionEntry entry = expressions.remove(from);
+        int insertIndex = to;
+        if (to > from) {
+            insertIndex--;
+        }
+        expressions.add(insertIndex, entry);
+    }
+
     public ExpressionEntry getExpression(int index) {
         return expressions.get(index);
     }

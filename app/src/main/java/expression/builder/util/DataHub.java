@@ -1,4 +1,4 @@
-package usace.hec.model;
+package expression.builder.util;
 
 import usace.hec.expressions.DataProvider;
 
@@ -61,5 +61,25 @@ public class DataHub implements DataProvider {
     @Override
     public void setBoolean(String name, boolean value) {
         currentBooleanValues.put(name,value);
+    }
+
+    public void removeInt(String name) {
+        currentIntValues.remove(name);
+    }
+
+    public void removeDouble(String name) {
+        currentDoubleValues.remove(name);
+    }
+
+    public void removeDate(String name) {
+        currentDateValues.remove(name);
+    }
+
+    public void removeString(String name) {
+        currentStringValues.remove(name);
+    }
+
+    public void removeBoolean(String name) {
+        currentBooleanValues.remove(name);
     }
 }

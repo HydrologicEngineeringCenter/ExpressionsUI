@@ -66,6 +66,7 @@ public class ExpressionNodeExplorer {
         expressionController = new ExpressionController();
 
         variableView.setData(expressionController.getExpressions());
+        variableView.setInvalidRows(expressionController.revalidateRows());
 
         commentTextArea = createGenericText("Description");
 
@@ -175,7 +176,7 @@ public class ExpressionNodeExplorer {
             @Override
             public void rowDeleted(int row) {
                 expressionController.removeExpression(row);
-                variableView.refresh();
+                refreshVariableView();
             }
 
             @Override
@@ -190,6 +191,12 @@ public class ExpressionNodeExplorer {
                 ExpressionEntry e = expressionController.getExpression(row);
                 commentTextArea.setText(e.comment());
                 expresssionTextArea.setText(e.expression());
+            }
+
+            @Override
+            public void rowMoved(int fromRow, int toRow) {
+                expressionController.moveExpression(fromRow, toRow);
+                refreshVariableView();;
             }
         });
 
@@ -238,6 +245,12 @@ public class ExpressionNodeExplorer {
         }
 
         expressionController.putExpression(ev);
+        refreshVariableView();
+    }
+
+    //Recomputes which rows reference a variable not defined by an earlier row, then repaints the table.
+    private void refreshVariableView() {
+        variableView.setInvalidRows(expressionController.revalidateRows());
         variableView.refresh();
     }
 
