@@ -23,7 +23,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 
-public class ExpressionNodeExplorer {
+public class ExpressionNodeExplorer extends JPanel{
     private final static String STRING_EMPTY = "";
     private ExpressionNode currentExpression;
     private ExpressionNodeTextBox textBox;
@@ -34,43 +34,55 @@ public class ExpressionNodeExplorer {
     private VariableTableView variableView;
     private ExpressionController expressionController;
     private JFrame frame;
+    private JMenuBar menuBar;
 
     //Set when the editMenu popup requests an edit; carried through to prefill the next Add/Edit Variable dialog.
     private AddVariableDialog.Result pendingEdit;
 
+    public ExpressionNodeExplorer() {
+        initUI();
+    }
+
+    //Standalone launcher — demonstrates hosting this panel in its own top-level window. An embedding
+    //app should instead construct ExpressionNodeExplorer directly and own the window lifecycle itself,
+    //calling confirmSaveOnClose()/save() from its own close handling (this panel never calls System.exit).
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             try { UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); }
             catch (Exception e) { e.printStackTrace(); }
-            new ExpressionNodeExplorer().createAndShowGUI();
+            ExpressionNodeExplorer explorer = new ExpressionNodeExplorer();
+
+            JFrame frame = new JFrame("HEC Expression Builder");
+            //DO_NOTHING_ON_CLOSE so the close-confirmation dialog below can stop the close (Cancel); the
+            //Yes/No branches drive the actual dispose/exit themselves once the save decision has been made.
+            frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+            frame.setJMenuBar(explorer.getMenuBar());
+            frame.setContentPane(explorer);
+            frame.setSize(1100, 700);
+            frame.setLocationRelativeTo(null);
+            frame.addWindowListener(new WindowAdapter() {
+                @Override
+                public void windowClosing(WindowEvent e) {
+                    if (explorer.confirmSaveOnClose()) {
+                        frame.dispose();
+                        System.exit(0);
+                    }
+                }
+            });
+            frame.setVisible(true);
         });
     }
 
-    private void createAndShowGUI() {
+    private void initUI() {
         List<DisplayNode> nodes = ExpressionNodeRegistry.getAllNodes();
 
-        //Create whole frame
-        frame = new JFrame("HEC Expression Builder");
-        //Allow close-confirmation dialog to appear before closing
-        frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        frame.setSize(1100, 700);
-        frame.setLocationRelativeTo(null);
-
-        JMenuBar menuBar = new JMenuBar();
+        menuBar = new JMenuBar();
         JMenu fileMenu = new JMenu("File");
         JMenuItem saveItem = new JMenuItem("Save");
         saveItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx()));
         saveItem.addActionListener(e -> save());
         fileMenu.add(saveItem);
         menuBar.add(fileMenu);
-        frame.setJMenuBar(menuBar);
-
-        frame.addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                confirmCloseWithSave();
-            }
-        });
 
         //Creates left hand tab Pane
         JTabbedPane tabbedPane = new JTabbedPane();
@@ -90,7 +102,7 @@ public class ExpressionNodeExplorer {
         try {
             expressionController.load();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(frame, "Failed to load saved variables: " + ex.getMessage(), "Load Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to load saved variables: " + ex.getMessage(), "Load Error", JOptionPane.ERROR_MESSAGE);
         }
 
         variableView.setData(expressionController.getExpressions());
@@ -117,7 +129,7 @@ public class ExpressionNodeExplorer {
                     commentTextArea.setVisible(true);
                     commentTextArea.setBorder(BorderFactory.createTitledBorder("Comment"));
                     expresssionTextArea.setVisible(true);
-                } else if (tabbedPane.getSelectedComponent().equals(treeView)){
+                } else if (tabbedPane.getSelectedComponent().equals(treeView)) {
                     commentTextArea.setBorder(BorderFactory.createTitledBorder("Description"));
                     commentTextArea.setVisible(true);
                     expresssionTextArea.setVisible(false);
@@ -144,12 +156,10 @@ public class ExpressionNodeExplorer {
         expressionPanel.add(evaluationLabel, BorderLayout.SOUTH);
         expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
 
-
-
-
         JPanel buttonPanel = new JPanel(new FlowLayout());
 
-        JButton saveButton =  new JButton("Save");
+        JButton saveButton = new JButton("Save");
+        JCheckBox syntaxType = new JCheckBox("Prefix Syntax?");
 
         //creates listener that creates an Add Variable Dialog
         saveButton.addActionListener(new ActionListener() {
@@ -163,6 +173,21 @@ public class ExpressionNodeExplorer {
             }
         });
 
+        syntaxType.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                if (currentExpression != null) {
+                    if (syntaxType.isSelected()) {
+                        textBox.setInfixSyntax(false);
+                    } else {
+                        textBox.setInfixSyntax(true);
+                    }
+                    textBox.setExpressionNodeText(currentExpression);
+                }
+            }
+        });
+
+        buttonPanel.add(syntaxType);
         buttonPanel.add(saveButton);
 
         //sets a listener which allows ExpressionNodeExplorer to update if variableView is updated
@@ -208,7 +233,7 @@ public class ExpressionNodeExplorer {
             }
 
             @Override
-            public void editRequested(int row){
+            public void editRequested(int row) {
                 ExpressionEntry e = expressionController.getExpression(row);
                 pendingEdit = new AddVariableDialog.Result(e.name(), e.comment(), e.variableType(), e.defaultValue().toString());
                 if (!e.variableType().equals("Updatable Variable")) textBox.setExpressionNodeText(e.expressionNode());
@@ -224,11 +249,12 @@ public class ExpressionNodeExplorer {
             @Override
             public void rowMoved(int fromRow, int toRow) {
                 expressionController.moveExpression(fromRow, toRow);
-                refreshVariableView();;
+                refreshVariableView();
+                ;
             }
         });
 
-        frame.setLayout(new BorderLayout());
+        setLayout(new BorderLayout());
 
         //Combines all lefthand components into a single panel on the left;
         JPanel leftPanel = new JPanel(new BorderLayout());
@@ -253,34 +279,44 @@ public class ExpressionNodeExplorer {
         splitPane.setDividerLocation(400);
         splitPane.setResizeWeight(0.5);
 
-        frame.add(splitPane, BorderLayout.CENTER);
-        frame.setVisible(true);
+        add(splitPane, BorderLayout.CENTER);
+    }
+    /**
+     * The File menu (currently just Save) built for this panel.
+     * Note: As a JPanel, it has no window of its own to hang a menu bar off of, an embedding app can attach this to its own JFrame/JDialog via
+     * setJMenuBar if it needs the shortcut, or ignore it and drive saving through save() directly using its own menu.
+     */
+    public JMenuBar getMenuBar() {
+        return menuBar;
     }
 
     /**
-     * Persists the variable database to disk. Embedding app can trigger a save on its own close/dispose path instead of
-     * relying on this window's WindowListener firing.
+     * Persists the variable database to disk. Safe to call directly, an embedding app can trigger a save on its own close/dispose path.
      */
     public void save() {
         try {
             expressionController.save();
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(frame, "Failed to save variables: " + ex.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(this, "Failed to save variables: " + ex.getMessage(), "Save Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
-    //Asks the user whether to save before the window closes; Cancel or closing the dialog box leaves the window open.
-    private void confirmCloseWithSave() {
-        int choice = JOptionPane.showConfirmDialog(frame, "Save changes before closing?", "Confirm Save",
+    /**
+     * Prompts to save before closing (Yes/No/Cancel) and saves if requested. This panel doesn't own a
+     * window, so it can't veto a close by itself — host apps should call this from their own
+     * close/dispose handling and only proceed with closing (dispose, System.exit, etc.) if it returns
+     * {@code true}.
+     */
+    public boolean confirmSaveOnClose() {
+        int choice = JOptionPane.showConfirmDialog(this, "Save changes before closing?", "Confirm Save",
                 JOptionPane.YES_NO_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE);
         if (choice == JOptionPane.CANCEL_OPTION || choice == JOptionPane.CLOSED_OPTION) {
-            return;
+            return false;
         }
         if (choice == JOptionPane.YES_OPTION) {
             save();
         }
-        frame.dispose();
-        System.exit(0);
+        return true;
     }
 
     private void showAddVariableDialog() throws Exception {
