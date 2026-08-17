@@ -1,5 +1,10 @@
 package expression.builder.model;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -74,5 +79,21 @@ public class VariableDataBase {
             }
         }
         return -1;
+    }
+
+    //writes the current expressions list to disk so it can be restored with load() on the next launch.
+    public void save(Path file) throws IOException {
+        Files.createDirectories(file.toAbsolutePath().getParent());
+        try (ObjectOutputStream out = new ObjectOutputStream(Files.newOutputStream(file))) {
+            out.writeObject(new ArrayList<>(expressions));
+        }
+    }
+
+    //restores an expressions list previously written by save().
+    @SuppressWarnings("unchecked")
+    public void load(Path file) throws IOException, ClassNotFoundException {
+        try (ObjectInputStream in = new ObjectInputStream(Files.newInputStream(file))) {
+            setExpressions((List<ExpressionEntry>) in.readObject());
+        }
     }
 }
