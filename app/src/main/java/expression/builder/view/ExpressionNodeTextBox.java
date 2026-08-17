@@ -13,7 +13,7 @@ import usace.hec.expressions.ExpressionNode;
 public class ExpressionNodeTextBox extends JPanel {
     private final JTextArea textArea;
     private boolean isProgrammaticUpdate = false;
-    private boolean infixSyntax = false;
+    private boolean infixSyntax = true;
 
     private TextUpdateListener textUpdateListener;
 
