@@ -1,6 +1,10 @@
 package expression.builder.controller;
 
+import java.io.IOException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -15,6 +19,8 @@ import expression.builder.util.DataHub;
  * All panels access the database of {@link ExpressionEntry} through an instance of this class (can most likely be static).
  */
 public class ExpressionController {
+    private static final Path SAVE_FILE = Paths.get(System.getProperty("user.home"), ".hecExpressionBuilder", "variables.ser");
+
     VariableDataBase db = new VariableDataBase();
     DataHub dh = new DataHub();
 
@@ -30,6 +36,43 @@ public class ExpressionController {
 
     public void setExpressions(List<ExpressionEntry> entries) {
         db.setExpressions(entries);
+    }
+
+    /**
+     * Persists the current variable database to disk. DataHub is not saved directly — mappings are derived from the database entries and get rebuilt
+     * by {@link #revalidateRows()}, which the caller should invoke after {@link #load()} on startup.
+     */
+    public void save() throws IOException {
+        db.save(SAVE_FILE);
+    }
+
+    /**
+     * Restores the variable database from the last {@link #save()}. Does nothing if no save file exists yet (e.g. first launch).
+     * Deserialized {@link ExpressionNode}s lose transient DataProvider, so each entry's expression is re-parsed to wire it back to DataHub.
+     */
+    public void load() throws IOException, ClassNotFoundException {
+        if (!Files.exists(SAVE_FILE)) {
+            return;
+        }
+        db.load(SAVE_FILE);
+        rewireLoadedExpressions();
+    }
+
+    private void rewireLoadedExpressions() {
+        List<ExpressionEntry> entries = db.getExpressions();
+        for (int i = 0; i < entries.size(); i++) {
+            ExpressionEntry entry = entries.get(i);
+            if (entry.variableType().equals("Updatable Variable")) {
+                continue;
+            }
+            try {
+                ExpressionNode node = parseExpression(entry.expression(), getExpressionTypeByName(i));
+                //node is the same, but now DataHub provided to all variable nodes within the expression.
+                db.setExpression(i, new ExpressionEntry(entry.name(), entry.expression(), node, entry.variableType(), entry.defaultValue(), entry.comment()));
+            } catch (Exception ignored) {
+                //leave the stored node unwired; revalidateRows() will flag this row as invalid
+            }
+        }
     }
 
 
@@ -227,22 +270,4 @@ public class ExpressionController {
         Method evalMethod = node.getClass().getMethod("evaluate");
         return evalMethod.invoke(node);
     }
-
-//    public void simulateVariables() throws Exception {
-//        List<ExpressionEntry> data = getExpressions();
-//        //TODO: move DataHub to register when expressions are ADDED, not parsed. Also update it so that ALL types are supported.
-//        for(ExpressionEntry e : data){
-//            if(e.expressionNode() instanceof DataRequester){
-//                ExpressionType eType = e.expressionNode().resultType();
-//                switch (eType) {
-//                    case ExpressionType.DOUBLE -> dh.setDouble(((DataRequester)e.expressionNode()).getName(), (double) e.defaultValue());
-//                    case ExpressionType.BOOLEAN -> dh.setBoolean(((DataRequester)e.expressionNode()).getName(), (boolean) e.defaultValue());
-//                    case ExpressionType.INTEGER -> dh.setInt(((DataRequester)e.expressionNode()).getName(), (int) e.defaultValue());
-//                    case ExpressionType.STRING -> dh.setString(((DataRequester)e.expressionNode()).getName(), (String) e.defaultValue());
-//                    case ExpressionType.DATE -> dh.setDate(((DataRequester)e.expressionNode()).getName(), (LocalDateTime) e.defaultValue());
-//                }
-//                dh.setDouble(((DataRequester)e.expressionNode()).getName(), (double) e.defaultValue());
-//            }
-//        }
-//    }
 }
