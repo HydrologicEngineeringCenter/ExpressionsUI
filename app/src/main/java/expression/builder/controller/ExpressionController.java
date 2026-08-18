@@ -40,6 +40,7 @@ public class ExpressionController {
 
     public void setExpressions(List<ExpressionEntry> entries) {
         db.setExpressions(entries);
+        rewireLoadedExpressions();
     }
 
     /**
