@@ -33,6 +33,10 @@ public class ExpressionController {
         return db.getExpressions();
     }
 
+    public DataProvider getDataProvider() {
+        return dh;
+    }
+
 
     public void setExpressions(List<ExpressionEntry> entries) {
         db.setExpressions(entries);

@@ -445,4 +445,18 @@ public class ExpressionNodeExplorer extends JPanel{
         evaluationLabel.setForeground(new Color(0xD3, 0x2F, 0x2F));
         currentExpression = null;
     }
+
+    public void setExpressions(List<ExpressionEntry> db){
+        expressionController.setExpressions(db);
+        variableView.setData(expressionController.getExpressions());
+        refreshVariableView();
+    }
+
+    public List<ExpressionEntry> getExpressions() {
+        return expressionController.getExpressions();
+    }
+
+    public DataProvider getDataProvider() {
+        return expressionController.getDataProvider();
+    }
 }
