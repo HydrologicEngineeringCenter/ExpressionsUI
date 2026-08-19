@@ -5,4 +5,5 @@ public interface ExplorerListener {
     void confirmUpdatableSaved(String name);
     void discardImport();
     void replace(String oldName, String name);
+    void releaseUpdatable(String name);
 }

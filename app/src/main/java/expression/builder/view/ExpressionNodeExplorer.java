@@ -40,8 +40,13 @@ public class ExpressionNodeExplorer extends JPanel{
     private ExplorerListener listener;
 
     //Resolve lost dependency from import if an Updatable needs to be edited
-    private boolean isOnlyEditingName = false;
+    private boolean wasEditingUpdatable = false;
     private String oldName;
+    //Set when re-importing replaces the confirmed variable the current edit started from. Release of
+    //the old host entry is controlled during saving (see saveAsRow), so an edit abandoned after a re-import won't mark
+    // the original entry as released.
+    private boolean importChanged = false;
+    
     //Set when the editMenu popup requests an edit; carried through to prefill the next Add/Edit Variable dialog.
     private AddVariablePanel.Result pendingEdit;
 
@@ -266,18 +271,27 @@ public class ExpressionNodeExplorer extends JPanel{
 
             @Override
             public void rowDeleted(int row) {
+                ExpressionEntry removed = expressionController.getExpression(row);
+                if (listener != null && removed.variableType().equals("Updatable Variable")) {
+                    listener.releaseUpdatable(removed.name());
+                }
                 expressionController.removeExpression(row);
                 refreshVariableView();
             }
 
             @Override
             public void editRequested(int row) {
-                //TODO: IF AN EDIT WAS MADE IN AN UPDATABLE VARIABLE, REPLACE THE KEY IN RESSIM, STORE THE ORIGINAL NAME SOMEWHERE AND CHECK TO SEE IF NAME WAS CHANGED, DO NOTHING IF IMPORT IS CHANGED
                 ExpressionEntry e = expressionController.getExpression(row);
                 if (e.variableType().equals("Updatable Variable")) {
-                    isOnlyEditingName = true;
+                    wasEditingUpdatable = true;
                     oldName = e.name();
+                } else {
+                    //clear values if edit is requested on non Updatable later
+                    wasEditingUpdatable = false;
+                    oldName = "";
                 }
+                //Always clear — a re-import flagged on a previous, abandoned edit must not leak here.
+                importChanged = false;
                 pendingEdit = new AddVariablePanel.Result(e.name(), e.comment(), e.variableType(), e.defaultValue().toString(), e.expression());
                 formPanel.setPrefill(pendingEdit);
                 if (!e.variableType().equals("Updatable Variable")) textBox.setExpressionNodeText(e.expressionNode());
@@ -303,7 +317,13 @@ public class ExpressionNodeExplorer extends JPanel{
                 if (listener==null) {
                     return "";
                 }
-                isOnlyEditingName = false;
+                if (wasEditingUpdatable) {
+                    //Re-importing replaces the previously-confirmed variable this row was tracking.
+                    //Only saveAsRow(), on an actual save, should mutate the host's map; releasing here would invalidate
+                    // the still-valid original entry if this edit is abandoned before saving.
+                    importChanged=true;
+                }
+                wasEditingUpdatable = false;
                 oldName = "";
                 return listener.importUpdatable();
             }
@@ -371,15 +391,31 @@ public class ExpressionNodeExplorer extends JPanel{
         if (ev == null) {
             return;
         }
-
-        if (listener!=null) {
-            if (isOnlyEditingName) {
-                if (oldName.equals(form.name())){
+        boolean stillUpdatable = form.variableType().equals("Updatable Variable");
+        if (listener!=null){
+            if (wasEditingUpdatable) {
+                if (!stillUpdatable) {
+                    //Converted away from Updatable Variable, delete the host's entry
+                    listener.releaseUpdatable(oldName);
+                } else if (importChanged) {
+                    //Re-imported: the old entry is being fully replaced by a different host variable name.
+                    listener.releaseUpdatable(oldName);
+                    listener.confirmUpdatableSaved(form.name());
+                } else if (!oldName.equals(form.name())) {
+                    //Same host variable, only the local display name changed — re-key it in place.
+                    //Not paired with confirmUpdatableSaved: no fresh import happened this session, so
+                    //the host has nothing new to stage/confirm, only a key to move.
                     listener.replace(oldName, form.name());
-                }
+                } //else: same host variable, same name — nothing changed, no signal needed.
+            } else if (stillUpdatable) {
+                //Brand-new Updatable Variable row (or one just switched to this type), backed by a
+                //fresh import from this session.
+                listener.confirmUpdatableSaved(form.name());
             }
-            listener.confirmUpdatableSaved(form.name());
         }
+        wasEditingUpdatable = false;
+        oldName = "";
+        importChanged = false;
 
         formPanel.reset();
         expressionController.putExpression(ev);
@@ -509,6 +545,6 @@ public class ExpressionNodeExplorer extends JPanel{
     }
 
     public void setExplorerListener(ExplorerListener listener){
-        return;
+        this.listener = listener;
     }
 }
