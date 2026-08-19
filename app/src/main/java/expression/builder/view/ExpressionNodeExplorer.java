@@ -37,7 +37,33 @@ public class ExpressionNodeExplorer extends JPanel{
     private AddVariablePanel formPanel = new AddVariablePanel();
 
     //NOT IMPLEMENTED IN LIBRARY, software that uses this library must implement an Explorer listener
-    private ExplorerListener listener;
+
+    private ExplorerListener listener = new ExplorerListener() {
+        //DUMMY EXPLORER LISTENER, DOES NOTHING
+        @Override
+        public String importUpdatable() {
+            return "...";
+        }
+
+        @Override
+        public void confirmUpdatableSaved(String name) {
+        }
+
+        @Override
+        public void discardImport() {
+
+        }
+
+        @Override
+        public void replace(String oldName, String name) {
+
+        }
+
+        @Override
+        public void releaseUpdatable(String name) {
+
+        }
+    };
 
     //Resolve lost dependency from import if an Updatable needs to be edited
     private boolean wasEditingUpdatable = false;
