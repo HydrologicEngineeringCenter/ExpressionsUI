@@ -39,8 +39,12 @@ public class ExpressionNodeExplorer extends JPanel{
     //NOT IMPLEMENTED IN LIBRARY, software that uses this library must implement an Explorer listener
     private ExplorerListener listener;
 
+    //Resolve lost dependency from import if an Updatable needs to be edited
+    private boolean isOnlyEditingName = false;
+    private String oldName;
     //Set when the editMenu popup requests an edit; carried through to prefill the next Add/Edit Variable dialog.
     private AddVariablePanel.Result pendingEdit;
+
 
     public ExpressionNodeExplorer() {
         initUI();
@@ -268,7 +272,12 @@ public class ExpressionNodeExplorer extends JPanel{
 
             @Override
             public void editRequested(int row) {
+                //TODO: IF AN EDIT WAS MADE IN AN UPDATABLE VARIABLE, REPLACE THE KEY IN RESSIM, STORE THE ORIGINAL NAME SOMEWHERE AND CHECK TO SEE IF NAME WAS CHANGED, DO NOTHING IF IMPORT IS CHANGED
                 ExpressionEntry e = expressionController.getExpression(row);
+                if (e.variableType().equals("Updatable Variable")) {
+                    isOnlyEditingName = true;
+                    oldName = e.name();
+                }
                 pendingEdit = new AddVariablePanel.Result(e.name(), e.comment(), e.variableType(), e.defaultValue().toString(), e.expression());
                 formPanel.setPrefill(pendingEdit);
                 if (!e.variableType().equals("Updatable Variable")) textBox.setExpressionNodeText(e.expressionNode());
@@ -294,6 +303,8 @@ public class ExpressionNodeExplorer extends JPanel{
                 if (listener==null) {
                     return "";
                 }
+                isOnlyEditingName = false;
+                oldName = "";
                 return listener.importUpdatable();
             }
 
@@ -362,7 +373,12 @@ public class ExpressionNodeExplorer extends JPanel{
         }
 
         if (listener!=null) {
-            listener.confirmUpdatableSaved();
+            if (isOnlyEditingName) {
+                if (oldName.equals(form.name())){
+                    listener.replace(oldName, form.name());
+                }
+            }
+            listener.confirmUpdatableSaved(form.name());
         }
 
         formPanel.reset();
