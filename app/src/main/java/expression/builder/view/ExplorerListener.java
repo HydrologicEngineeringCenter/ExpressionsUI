@@ -1,5 +1,7 @@
 package expression.builder.view;
 
 public interface ExplorerListener {
-    void saveUpdatable();
+    String importUpdatable();
+    void confirmUpdatableSaved();
+    void discardImport();
 }

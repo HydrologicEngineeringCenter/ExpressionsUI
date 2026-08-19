@@ -187,7 +187,6 @@ public class ExpressionController {
                 case ExpressionType.DATE -> newExp = new DateTimeVariableNode("");
                 default -> throw new RuntimeException("Invalid Default Value");
             }
-            expressionText = "[" + name + "]";
             defaultValue = evaluateSafely(defaultValueEvaluate);
             if (defaultValue == null) {
                 return null;

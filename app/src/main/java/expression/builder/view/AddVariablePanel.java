@@ -11,12 +11,16 @@ import java.util.Optional;
 
 public final class AddVariablePanel extends JPanel {
 
-    public record Result(String name, String comment, String variableType, String defaultValue) {
+    private ImportListener listener;
+
+    public record Result(String name, String comment, String variableType, String defaultValue, String expression) {
     }
 
     private final JTextField nameField = new JTextField(40);
     private final JTextField defaultValueField = new JTextField(20);
     private final JTextArea commentField = new JTextArea();
+    private final JLabel importLabel = new JLabel("Import Name: ");
+    private final JTextArea importField = new JTextArea();
     private final JLabel defaultValueLabel = new JLabel("Default Value: ");
     private final JComboBox<String> typeComboBox = new JComboBox<>();
     private final JButton importBtn = new JButton("Import");
@@ -25,6 +29,8 @@ public final class AddVariablePanel extends JPanel {
      * Shows the Add/Edit Variable Panel, which rests above the Expression Writing panel.
      */
     public AddVariablePanel() {
+        importField.setEditable(false);
+        importField.setBackground(new Color(245, 245, 245));
         commentField.setLineWrap(true);
         commentField.setWrapStyleWord(true);
         typeComboBox.setPreferredSize(new Dimension(150,20));
@@ -43,8 +49,18 @@ public final class AddVariablePanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 boolean selected = typeComboBox.getSelectedItem().equals("Updatable Variable");
+                if (!selected){
+                    if (listener !=null) {
+                        listener.discardImport();
+                        defaultValueField.setText("");
+                        importField.setText("");
+                    }
+                }
                 defaultValueField.setVisible(selected);
                 defaultValueLabel.setVisible(selected);
+                importField.setVisible(selected);
+                importLabel.setVisible(selected);
+                importBtn.setVisible(selected);
                 revalidate();
 
             }
@@ -75,12 +91,12 @@ public final class AddVariablePanel extends JPanel {
         gc.anchor = GridBagConstraints.LINE_START;
         gc.fill = GridBagConstraints.NONE;
         gc.weightx = 0;
-        add(new JLabel("Variable Type?"), gc);
+        add(new JLabel("Variable Type: "), gc);
 
         gc.gridx = 3;
         gc.anchor = GridBagConstraints.LINE_START;
-        gc.fill = GridBagConstraints.HORIZONTAL;
-        gc.weightx = 1.0;
+        gc.fill = GridBagConstraints.NONE;
+        gc.weightx = 0;
         add(typeComboBox, gc);
 
         //Next Row
@@ -103,20 +119,51 @@ public final class AddVariablePanel extends JPanel {
         gc.anchor = GridBagConstraints.LINE_END;
         gc.fill = GridBagConstraints.NONE;
         gc.weightx = 0;
+        add(importLabel, gc);
+
+        gc.gridx = 1;
+        gc.weighty = 1.0; //added weight to allow vertical expansion
+        gc.gridwidth = 2;
+        gc.fill = GridBagConstraints.BOTH; //fill added to allow expansion
+        gc.anchor = GridBagConstraints.LINE_START;
+        add(importField, gc);
+
+        gc.gridx = 3;
+        gc.gridwidth = 1;
+        gc.anchor = GridBagConstraints.LINE_START;
+        gc.fill = GridBagConstraints.NONE;
+        add(importBtn, gc);
+
+
+        //Next Row
+        gc.gridx = 0;
+        gc.gridy = 4;
+        gc.anchor = GridBagConstraints.LINE_END;
+        gc.fill = GridBagConstraints.NONE;
+        gc.weightx = 0;
         add(new JLabel("Comments: "), gc);
 
         gc.gridx = 1;
         gc.weighty = 1.0; //added weight to allow vertical expansion
-        gc.gridwidth = 4;
+        gc.gridwidth = 3;
         gc.fill = GridBagConstraints.BOTH; //fill added to allow expansion
         gc.anchor = GridBagConstraints.LINE_START;
         add(commentField, gc);
 
+        //set Listener
+        importBtn.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                String variable = listener.importRequested();
+                importField.setText(variable);
+            }
+        });
 
 
         setBorder(new EmptyBorder(8, 8, 8, 8));
         setBorder(BorderFactory.createTitledBorder("Add Variable"));
     }
+
     /**
      * Populates the form for editing an existing variable, or clears it back to blank if
      * {@code prefill} is {@code null}.
@@ -135,6 +182,10 @@ public final class AddVariablePanel extends JPanel {
                 if (i == 1) {
                     defaultValueField.setVisible(true);
                     defaultValueLabel.setVisible(true);
+                    importField.setVisible(true);
+                    importLabel.setVisible(true);
+                    importBtn.setVisible(true);
+                    importField.setText(prefill.expression());
                 }
             }
         }
@@ -145,9 +196,13 @@ public final class AddVariablePanel extends JPanel {
         nameField.setText("");
         defaultValueField.setText("");
         commentField.setText("");
+        importField.setText("");
         typeComboBox.setSelectedIndex(0);
         defaultValueField.setVisible(false);
         defaultValueLabel.setVisible(false);
+        importField.setVisible(false);
+        importLabel.setVisible(false);
+        importBtn.setVisible(false);
     }
 
     /** @return {@code true} if the form currently has enough input to submit (a non-empty name). */
@@ -157,6 +212,10 @@ public final class AddVariablePanel extends JPanel {
 
     /** @return the current field values, regardless of {@link #hasValidInput()}. */
     public Result getResult() {
-        return new Result(nameField.getText(), commentField.getText(), (String) typeComboBox.getSelectedItem(), defaultValueField.getText());
+        return new Result(nameField.getText(), commentField.getText(), (String) typeComboBox.getSelectedItem(), defaultValueField.getText(), importField.getText());
+    }
+
+    public void setListener(ImportListener listener){
+        this.listener = listener;
     }
 }

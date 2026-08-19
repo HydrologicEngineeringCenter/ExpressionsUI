@@ -21,7 +21,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 
 public class ExpressionNodeExplorer extends JPanel{
     private final static String STRING_EMPTY = "";
@@ -36,6 +35,9 @@ public class ExpressionNodeExplorer extends JPanel{
     private JFrame frame;
     private JMenuBar menuBar;
     private AddVariablePanel formPanel = new AddVariablePanel();
+
+    //NOT IMPLEMENTED IN LIBRARY, software that uses this library must implement an Explorer listener
+    private ExplorerListener listener;
 
     //Set when the editMenu popup requests an edit; carried through to prefill the next Add/Edit Variable dialog.
     private AddVariablePanel.Result pendingEdit;
@@ -88,14 +90,10 @@ public class ExpressionNodeExplorer extends JPanel{
         //Creates left hand tab Pane
         JTabbedPane tabbedPane = new JTabbedPane();
 
-        ExpressionNodeTableView tableView = new ExpressionNodeTableView(nodes);
-
-        tabbedPane.add("Node Table", tableView);
-        tabbedPane.setMinimumSize(new Dimension(150, 100));
-
         variableView = new VariableTableView();
         variableView.setMinimumSize(new Dimension(150, 100));
 
+        //Variable Table Tab
         tabbedPane.add("Variable Table", variableView);
 
         expressionController = new ExpressionController();
@@ -109,20 +107,77 @@ public class ExpressionNodeExplorer extends JPanel{
         variableView.setData(expressionController.getExpressions());
         variableView.setInvalidRows(expressionController.revalidateRows());
 
-        commentTextArea = createGenericText("Description");
-
+        commentTextArea = createGenericText("Comment");
         expresssionTextArea = createGenericText("Expanded Expression");
 
-        expresssionTextArea.setVisible(false);
-        commentTextArea.setVisible(false);
-
-
+        //Operations Tree Tab
         ExpressionNodeTreeView treeView = new ExpressionNodeTreeView(nodes, (descriptor, clicks) -> handleNodeInsertion(descriptor, clicks));
 
         treeView.setMinimumSize(new Dimension(150, 100));
 
         tabbedPane.add("Operations", treeView);
 
+        //Node Table List (Unused for now)
+        ExpressionNodeTableView tableView = new ExpressionNodeTableView(nodes);
+        tabbedPane.add("Node Table", tableView);
+        tabbedPane.setMinimumSize(new Dimension(150, 100));
+        tabbedPane.setEnabledAt(2,false);
+
+        tabbedPane.setSelectedIndex(0);
+
+        //Creates right hand side typing textBox and evaluationLabel
+
+        textBox = new ExpressionNodeTextBox();
+        textBox.setTextUpdateListener(this::handleTextUpdate);
+        evaluationLabel = createEvaluationLabel();
+        scriptTextArea = createGenericText("Script Format");
+
+
+        JPanel expressionPanel = new JPanel(new BorderLayout());
+        //Splitpane to edit the size of the box where typing happens and the box where the script format of the expression is shown.
+        expressionPanel.add(new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, new JScrollPane(scriptTextArea)), BorderLayout.CENTER);
+        expressionPanel.add(evaluationLabel, BorderLayout.SOUTH);
+        expressionPanel.add(formPanel, BorderLayout.NORTH);
+        expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
+
+
+        JButton saveButton = new JButton("Save");
+        JCheckBox syntaxType = new JCheckBox("Prefix Syntax?");
+
+        JPanel buttonPanel = new JPanel(new FlowLayout());
+        buttonPanel.add(syntaxType);
+        buttonPanel.add(saveButton);
+
+        setLayout(new BorderLayout());
+
+        //Combines all lefthand components into a single panel on the left;
+        JPanel leftPanel = new JPanel(new BorderLayout());
+        leftPanel.add(tabbedPane, BorderLayout.CENTER);
+
+        //Combine commentTextArea and Expression Text Area before putting into leftPanel
+        JPanel leftText = new JPanel(new BorderLayout());
+        leftText.add(commentTextArea, BorderLayout.NORTH);
+        leftText.add(expresssionTextArea, BorderLayout.SOUTH);
+
+        //Put combined text into leftPanel
+        leftPanel.add(leftText, BorderLayout.SOUTH);
+        leftPanel.setMinimumSize(new Dimension(150, 100));
+
+        //Combines all righthand components into a single panel on the right;
+        JPanel rightPanel = new JPanel(new BorderLayout());
+        rightPanel.add(expressionPanel, BorderLayout.CENTER);
+        rightPanel.add(buttonPanel, BorderLayout.SOUTH);
+
+        //Combine the lefthand tabbedPane with tables and comments on all functions with the right panel where expression building takes place
+        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
+        splitPane.setDividerLocation(400);
+        splitPane.setResizeWeight(0.5);
+
+        add(splitPane, BorderLayout.CENTER);
+
+        //ADDING AND SETTING LISTENER SECTION
+
+        //Shows descriptions in bottom left based on which tab is shown
         tabbedPane.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
@@ -143,26 +198,6 @@ public class ExpressionNodeExplorer extends JPanel{
             }
         });
 
-        //Creates right hand side typing textBox and evaluationLabel
-
-        textBox = new ExpressionNodeTextBox();
-        textBox.setTextUpdateListener(this::handleTextUpdate);
-        evaluationLabel = createEvaluationLabel();
-        scriptTextArea = createGenericText("Script Format");
-
-
-        JPanel expressionPanel = new JPanel(new BorderLayout());
-        //Splitpane to edit the size of the box where typing happens and the box where the script format of the expression is shown.
-        expressionPanel.add(new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, new JScrollPane(scriptTextArea)), BorderLayout.CENTER);
-        expressionPanel.add(evaluationLabel, BorderLayout.SOUTH);
-        expressionPanel.add(formPanel, BorderLayout.NORTH);
-        expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
-
-        JPanel buttonPanel = new JPanel(new FlowLayout());
-
-        JButton saveButton = new JButton("Save");
-        JCheckBox syntaxType = new JCheckBox("Prefix Syntax?");
-
         //creates listener that uses the Add Variable Panel
         saveButton.addActionListener(new ActionListener() {
             @Override
@@ -175,6 +210,7 @@ public class ExpressionNodeExplorer extends JPanel{
             }
         });
 
+        //listener that updates Expression Preview to the corresponding sytax based on checkBox
         syntaxType.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
@@ -188,10 +224,6 @@ public class ExpressionNodeExplorer extends JPanel{
                 }
             }
         });
-
-        buttonPanel.add(syntaxType);
-        buttonPanel.add(saveButton);
-
         //sets a listener which allows ExpressionNodeExplorer to update if variableView is updated
         variableView.setVariableTableListener(new VariableTableListener() {
             @Override
@@ -237,7 +269,7 @@ public class ExpressionNodeExplorer extends JPanel{
             @Override
             public void editRequested(int row) {
                 ExpressionEntry e = expressionController.getExpression(row);
-                pendingEdit = new AddVariablePanel.Result(e.name(), e.comment(), e.variableType(), e.defaultValue().toString());
+                pendingEdit = new AddVariablePanel.Result(e.name(), e.comment(), e.variableType(), e.defaultValue().toString(), e.expression());
                 formPanel.setPrefill(pendingEdit);
                 if (!e.variableType().equals("Updatable Variable")) textBox.setExpressionNodeText(e.expressionNode());
             }
@@ -253,36 +285,27 @@ public class ExpressionNodeExplorer extends JPanel{
             public void rowMoved(int fromRow, int toRow) {
                 expressionController.moveExpression(fromRow, toRow);
                 refreshVariableView();
-                ;
             }
         });
 
-        setLayout(new BorderLayout());
+        formPanel.setListener(new ImportListener() {
+            @Override
+            public String importRequested() {
+                if (listener==null) {
+                    return "";
+                }
+                return listener.importUpdatable();
+            }
 
-        //Combines all lefthand components into a single panel on the left;
-        JPanel leftPanel = new JPanel(new BorderLayout());
-        leftPanel.add(tabbedPane, BorderLayout.CENTER);
+            @Override
+            public void discardImport() {
+                if (listener==null) {
+                    return;
+                }
+                listener.discardImport();
+            }
+        });
 
-        //Combine commentTextArea and Expression Text Area before putting into leftPanel
-        JPanel leftText = new JPanel(new BorderLayout());
-        leftText.add(commentTextArea, BorderLayout.NORTH);
-        leftText.add(expresssionTextArea, BorderLayout.SOUTH);
-
-        //Put combined text into leftPanel
-        leftPanel.add(leftText, BorderLayout.SOUTH);
-        leftPanel.setMinimumSize(new Dimension(150, 100));
-
-        //Combines all righthand components into a single panel on the right;
-        JPanel rightPanel = new JPanel(new BorderLayout());
-        rightPanel.add(expressionPanel, BorderLayout.CENTER);
-        rightPanel.add(buttonPanel, BorderLayout.SOUTH);
-
-        //Combine the lefthand tabbedPane with tables and comments on all functions with the right panel where expression building takes place
-        JSplitPane splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, leftPanel, rightPanel);
-        splitPane.setDividerLocation(400);
-        splitPane.setResizeWeight(0.5);
-
-        add(splitPane, BorderLayout.CENTER);
     }
     /**
      * The File menu (currently just Save) built for this panel.
@@ -326,7 +349,7 @@ public class ExpressionNodeExplorer extends JPanel{
         pendingEdit = null;
 
         AddVariablePanel.Result form = formPanel.getResult();
-        String expression = textBox.getExpression();
+        String expression = form.variableType().equals("Updatable Variable")? form.expression() : textBox.getExpression();
 
         //check if panel has a name or expression is not valid when row added isn't an Updatable Variable
         if (!formPanel.hasValidInput() || (currentExpression == null && !form.variableType().equals("Updatable Variable"))){
@@ -336,6 +359,10 @@ public class ExpressionNodeExplorer extends JPanel{
         EditEvent ev = expressionController.createEditEvent(this, form.name(), expression, form.comment(), form.variableType(), form.defaultValue());
         if (ev == null) {
             return;
+        }
+
+        if (listener!=null) {
+            listener.confirmUpdatableSaved();
         }
 
         formPanel.reset();
@@ -463,5 +490,9 @@ public class ExpressionNodeExplorer extends JPanel{
 
     public DataProvider getDataProvider() {
         return expressionController.getDataProvider();
+    }
+
+    public void setExplorerListener(ExplorerListener listener){
+        return;
     }
 }
