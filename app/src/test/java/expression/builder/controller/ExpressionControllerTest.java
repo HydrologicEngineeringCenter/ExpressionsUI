@@ -25,7 +25,7 @@ class ExpressionControllerTest {
         EditEvent ev = controller.createEditEvent(this, "myVar", "", "a comment", "Updatable Variable", "");
 
         assertEquals("myVar", ev.getName());
-        assertEquals("[myVar]", ev.getExpressionString());
+        assertEquals("", ev.getExpressionString());
         assertEquals("Updatable Variable", ev.getVariableType());
         assertEquals("a comment", ev.getComment());
         assertEquals(ExpressionType.DOUBLE, ev.getExpression().resultType());
