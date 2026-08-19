@@ -155,7 +155,11 @@ public final class AddVariablePanel extends JPanel {
             @Override
             public void actionPerformed(ActionEvent e) {
                 String variable = listener.importRequested();
-                importField.setText(variable);
+                //Treat a null/blank result (host had nothing to offer, or the user cancelled its picker)
+                //as "no selection made" rather than clobbering whatever was previously imported.
+                if (variable != null && !variable.isBlank()) {
+                    importField.setText(variable);
+                }
             }
         });
 
@@ -205,9 +209,19 @@ public final class AddVariablePanel extends JPanel {
         importBtn.setVisible(false);
     }
 
-    /** @return {@code true} if the form currently has enough input to submit (a non-empty name). */
+    /**
+     * @return {@code true} if the form currently has enough input to submit:
+     * Updatable Variable: a completed import (an empty import would persist a row with no link back to the host's variable).
+     * Other: non-empty name
+     */
     public boolean hasValidInput() {
-        return !nameField.getText().isEmpty();
+        if (nameField.getText().isEmpty()) {
+            return false;
+        }
+        if (typeComboBox.getSelectedItem().equals("Updatable Variable") && importField.getText().isEmpty()) {
+            return false;
+        }
+        return true;
     }
 
     /** @return the current field values, regardless of {@link #hasValidInput()}. */
