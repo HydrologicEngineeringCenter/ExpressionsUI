@@ -51,6 +51,11 @@ public class ExpressionController {
         db.save(SAVE_FILE);
     }
 
+    //package-private so tests can round-trip through a temp file instead of the real SAVE_FILE
+    void save(Path file) throws IOException {
+        db.save(file);
+    }
+
     /**
      * Restores the variable database from the last {@link #save()}. Does nothing if no save file exists yet (e.g. first launch).
      * Deserialized {@link ExpressionNode}s lose transient DataProvider, so each entry's expression is re-parsed to wire it back to DataHub.
@@ -62,6 +67,16 @@ public class ExpressionController {
         db.load(SAVE_FILE);
         rewireLoadedExpressions();
     }
+
+    //package-private so tests can round-trip through a temp file instead of the real SAVE_FILE
+    void load(Path file) throws IOException, ClassNotFoundException {
+        if (!Files.exists(file)) {
+            return;
+        }
+        db.load(file);
+        rewireLoadedExpressions();
+    }
+
 
     private void rewireLoadedExpressions() {
         List<ExpressionEntry> entries = db.getExpressions();
@@ -172,7 +187,6 @@ public class ExpressionController {
                 case ExpressionType.DATE -> newExp = new DateTimeVariableNode("");
                 default -> throw new RuntimeException("Invalid Default Value");
             }
-            expressionText = "[" + name + "]";
             defaultValue = evaluateSafely(defaultValueEvaluate);
             if (defaultValue == null) {
                 return null;
