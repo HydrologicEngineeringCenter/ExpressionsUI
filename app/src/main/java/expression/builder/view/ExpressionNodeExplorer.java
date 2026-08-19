@@ -35,9 +35,10 @@ public class ExpressionNodeExplorer extends JPanel{
     private ExpressionController expressionController;
     private JFrame frame;
     private JMenuBar menuBar;
+    private AddVariablePanel formPanel = new AddVariablePanel();
 
     //Set when the editMenu popup requests an edit; carried through to prefill the next Add/Edit Variable dialog.
-    private AddVariableDialog.Result pendingEdit;
+    private AddVariablePanel.Result pendingEdit;
 
     public ExpressionNodeExplorer() {
         initUI();
@@ -154,6 +155,7 @@ public class ExpressionNodeExplorer extends JPanel{
         //Splitpane to edit the size of the box where typing happens and the box where the script format of the expression is shown.
         expressionPanel.add(new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, new JScrollPane(scriptTextArea)), BorderLayout.CENTER);
         expressionPanel.add(evaluationLabel, BorderLayout.SOUTH);
+        expressionPanel.add(formPanel, BorderLayout.NORTH);
         expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
 
         JPanel buttonPanel = new JPanel(new FlowLayout());
@@ -161,12 +163,12 @@ public class ExpressionNodeExplorer extends JPanel{
         JButton saveButton = new JButton("Save");
         JCheckBox syntaxType = new JCheckBox("Prefix Syntax?");
 
-        //creates listener that creates an Add Variable Dialog
+        //creates listener that uses the Add Variable Panel
         saveButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
-                    showAddVariableDialog();
+                    saveAsRow();
                 } catch (Exception ex) {
                     throw new RuntimeException(ex);
                 }
@@ -235,7 +237,8 @@ public class ExpressionNodeExplorer extends JPanel{
             @Override
             public void editRequested(int row) {
                 ExpressionEntry e = expressionController.getExpression(row);
-                pendingEdit = new AddVariableDialog.Result(e.name(), e.comment(), e.variableType(), e.defaultValue().toString());
+                pendingEdit = new AddVariablePanel.Result(e.name(), e.comment(), e.variableType(), e.defaultValue().toString());
+                formPanel.setPrefill(pendingEdit);
                 if (!e.variableType().equals("Updatable Variable")) textBox.setExpressionNodeText(e.expressionNode());
             }
 
@@ -319,21 +322,23 @@ public class ExpressionNodeExplorer extends JPanel{
         return true;
     }
 
-    private void showAddVariableDialog() throws Exception {
-        Optional<AddVariableDialog.Result> formInput = AddVariableDialog.show(pendingEdit);
+    private void saveAsRow() throws Exception {
         pendingEdit = null;
-        if (formInput.isEmpty()) {
+
+        AddVariablePanel.Result form = formPanel.getResult();
+        String expression = textBox.getExpression();
+
+        //check if panel has a name or expression is not valid when row added isn't an Updatable Variable
+        if (!formPanel.hasValidInput() || (currentExpression == null && !form.variableType().equals("Updatable Variable"))){
             return;
         }
-
-        AddVariableDialog.Result form = formInput.get();
-        String expression = textBox.getExpression();
 
         EditEvent ev = expressionController.createEditEvent(this, form.name(), expression, form.comment(), form.variableType(), form.defaultValue());
         if (ev == null) {
             return;
         }
 
+        formPanel.reset();
         expressionController.putExpression(ev);
         refreshVariableView();
     }

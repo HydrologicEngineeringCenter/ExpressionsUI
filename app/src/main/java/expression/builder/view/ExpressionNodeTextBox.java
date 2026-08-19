@@ -24,7 +24,6 @@ public class ExpressionNodeTextBox extends JPanel {
         textArea = new JTextArea();
         textArea.setEditable(true);
         textArea.setFont(new Font("Monospaced", Font.PLAIN, 14));
-        textArea.setBackground(new Color(245, 245, 245));
         textArea.setLineWrap(true);
         textArea.setWrapStyleWord(true);
         textArea.setBorder(new EmptyBorder(8, 8, 8, 8));
