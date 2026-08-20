@@ -28,6 +28,7 @@ public class ExpressionNodeExplorer extends JPanel{
     private ExpressionNodeTextBox textBox;
     private JLabel evaluationLabel;
     private JTextArea scriptTextArea;
+    private JScrollPane scriptScrollPane;
     private JTextArea commentTextArea;
     private JTextArea expresssionTextArea;
     private VariableTableView variableView;
@@ -80,6 +81,7 @@ public class ExpressionNodeExplorer extends JPanel{
     
     //Set when the editMenu popup requests an edit; carried through to prefill the next Add/Edit Variable dialog.
     private AddVariablePanel.Result pendingEdit;
+    private JSplitPane expressionPreviewAndScript;
 
 
     public ExpressionNodeExplorer() {
@@ -174,8 +176,10 @@ public class ExpressionNodeExplorer extends JPanel{
 
 
         JPanel expressionPanel = new JPanel(new BorderLayout());
-        //Splitpane to edit the size of the box where typing happens and the box where the script format of the expression is shown.
-        expressionPanel.add(new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, new JScrollPane(scriptTextArea)), BorderLayout.CENTER);
+        //Split Pane to edit the size of the box where typing happens and the box where the script format of the expression is shown.
+        scriptScrollPane = new JScrollPane(scriptTextArea);
+        expressionPreviewAndScript = new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, scriptScrollPane);
+        expressionPanel.add(expressionPreviewAndScript, BorderLayout.CENTER);
         expressionPanel.add(evaluationLabel, BorderLayout.SOUTH);
         expressionPanel.add(formPanel, BorderLayout.NORTH);
         expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
@@ -342,7 +346,7 @@ public class ExpressionNodeExplorer extends JPanel{
             }
         });
 
-        formPanel.setListener(new ImportListener() {
+        formPanel.setListener(new AddVariablePanelListener() {
             @Override
             public String importRequested() {
                 if (listener==null) {
@@ -365,6 +369,14 @@ public class ExpressionNodeExplorer extends JPanel{
                     return;
                 }
                 listener.discardImport();
+            }
+
+            @Override
+            public void hideScript(boolean constantOrUpdatable) {
+                scriptScrollPane.setVisible(constantOrUpdatable);
+                expressionPreviewAndScript.revalidate();
+                SwingUtilities.invokeLater(() ->
+                        expressionPreviewAndScript.setDividerLocation(constantOrUpdatable ? 0.7 : 0.3));
             }
         });
 
@@ -562,20 +574,24 @@ public class ExpressionNodeExplorer extends JPanel{
         currentExpression = null;
     }
 
+    //Helper method to load data through an outside source that saved the table rows
     public void setExpressions(List<ExpressionEntry> db){
         expressionController.setExpressions(db);
         variableView.setData(expressionController.getExpressions());
         refreshVariableView();
     }
 
+    //Helper method to allow saving of expression rows to external variable
     public List<ExpressionEntry> getExpressions() {
         return expressionController.getExpressions();
     }
 
+    //Deprecated, not really needed
     public DataProvider getDataProvider() {
         return expressionController.getDataProvider();
     }
 
+    //Method calls within Explorer cause flags to be raised elsewhere
     public void setExplorerListener(ExplorerListener listener){
         this.listener = listener;
     }

@@ -2,16 +2,13 @@ package expression.builder.view;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.DocumentEvent;
-import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.util.Optional;
 
 public final class AddVariablePanel extends JPanel {
 
-    private ImportListener listener;
+    private AddVariablePanelListener listener;
 
     public record Result(String name, String comment, String variableType, String defaultValue, String expression) {
     }
@@ -48,7 +45,7 @@ public final class AddVariablePanel extends JPanel {
         typeComboBox.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                boolean selected = typeComboBox.getSelectedItem().equals("Updatable Variable");
+                boolean selected = typeComboBox.getSelectedItem().equals("Updatable Variable") ||  typeComboBox.getSelectedItem().equals("Constant");
                 if (!selected){
                     if (listener !=null) {
                         listener.discardImport();
@@ -62,6 +59,9 @@ public final class AddVariablePanel extends JPanel {
                 importLabel.setVisible(selected);
                 importBtn.setVisible(selected);
                 revalidate();
+                if (listener!=null) {
+                    listener.hideScript(!selected);
+                }
 
             }
         });
@@ -229,7 +229,7 @@ public final class AddVariablePanel extends JPanel {
         return new Result(nameField.getText(), commentField.getText(), (String) typeComboBox.getSelectedItem(), defaultValueField.getText(), importField.getText());
     }
 
-    public void setListener(ImportListener listener){
+    public void setListener(AddVariablePanelListener listener){
         this.listener = listener;
     }
 }

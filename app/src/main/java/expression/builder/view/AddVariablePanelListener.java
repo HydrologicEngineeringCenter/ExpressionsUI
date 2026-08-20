@@ -1,6 +1,7 @@
 package expression.builder.view;
 
-public interface ImportListener {
+public interface AddVariablePanelListener {
     String importRequested();
     void discardImport();
+    void hideScript(boolean hidden);
 }

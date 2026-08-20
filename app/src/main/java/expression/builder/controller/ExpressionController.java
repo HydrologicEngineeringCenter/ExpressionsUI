@@ -182,7 +182,7 @@ public class ExpressionController {
                 //These don't actually create usable VariableNodes, constructed here for clarification on what kind of node is being added
                 case ExpressionType.DOUBLE -> newExp = new DoubleVariableNode("");
                 case ExpressionType.BOOLEAN -> newExp = new BooleanVariableNode("");
-                case ExpressionType.INTEGER -> newExp = new IntegerVariableNode("");
+                case ExpressionType.INTEGER -> newExp = new DoubleVariableNode(""); //treat integer default variables as doubles
                 case ExpressionType.STRING -> newExp = new StringVariableNode("");
                 case ExpressionType.DATE -> newExp = new DateTimeVariableNode("");
                 default -> throw new RuntimeException("Invalid Default Value");
