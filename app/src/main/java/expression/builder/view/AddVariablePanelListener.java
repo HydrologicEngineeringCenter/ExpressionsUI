@@ -4,4 +4,7 @@ public interface AddVariablePanelListener {
     String importRequested();
     void discardImport();
     void hideScript(boolean hidden);
+    void constantBorder();
+    void updatableBorder();
+    void expressionBorder();
 }

@@ -323,13 +323,19 @@ public class ExpressionNodeExplorer extends JPanel{
                 } else {
                     //clear values if edit is requested on non Updatable later
                     wasEditingUpdatable = false;
-                    oldName = "";
+                    oldName = STRING_EMPTY;
                 }
                 //Always clear — a re-import flagged on a previous, abandoned edit must not leak here.
                 importChanged = false;
-                pendingEdit = new AddVariablePanel.Result(e.name(), e.comment(), e.variableType(), e.defaultValue().toString(), e.expression());
+                pendingEdit = new AddVariablePanel.Result(e.name(), e.comment(), e.variableType(), e.expression());
                 formPanel.setPrefill(pendingEdit);
-                if (!e.variableType().equals("Updatable Variable")) textBox.setExpressionNodeText(e.expressionNode());
+                if (!e.variableType().equals("Updatable Variable")){
+                    //Default value has no stored expression text, only its evaluated result (Object) — prefill
+                    //ExpressionPreview with that result so it can be re-evaluated and re-saved.
+                    textBox.setText(String.valueOf(e.defaultValue()));
+                } else {
+                    textBox.setExpressionNodeText(e.expressionNode());
+                }
             }
 
             @Override
@@ -350,7 +356,7 @@ public class ExpressionNodeExplorer extends JPanel{
             @Override
             public String importRequested() {
                 if (listener==null) {
-                    return "";
+                    return STRING_EMPTY;
                 }
                 if (wasEditingUpdatable) {
                     //Re-importing replaces the previously-confirmed variable this row was tracking.
@@ -359,7 +365,7 @@ public class ExpressionNodeExplorer extends JPanel{
                     importChanged=true;
                 }
                 wasEditingUpdatable = false;
-                oldName = "";
+                oldName = STRING_EMPTY;
                 return listener.importUpdatable();
             }
 
@@ -376,7 +382,22 @@ public class ExpressionNodeExplorer extends JPanel{
                 scriptScrollPane.setVisible(constantOrUpdatable);
                 expressionPreviewAndScript.revalidate();
                 SwingUtilities.invokeLater(() ->
-                        expressionPreviewAndScript.setDividerLocation(constantOrUpdatable ? 0.7 : 0.3));
+                        expressionPreviewAndScript.setDividerLocation(constantOrUpdatable ? 0.2 : 0.7));
+            }
+
+            @Override
+            public void constantBorder() {
+                textBox.setBorder("Constant Value");
+            }
+
+            @Override
+            public void updatableBorder() {
+                textBox.setBorder("Default Value");
+            }
+
+            @Override
+            public void expressionBorder() {
+                textBox.setBorder("Expression Preview");
             }
         });
 
@@ -430,7 +451,7 @@ public class ExpressionNodeExplorer extends JPanel{
             return;
         }
 
-        EditEvent ev = expressionController.createEditEvent(this, form.name(), expression, form.comment(), form.variableType(), form.defaultValue());
+        EditEvent ev = expressionController.createEditEvent(this, form.name(), expression, form.comment(), form.variableType(), textBox.getExpression());
         if (ev == null) {
             return;
         }
@@ -462,6 +483,7 @@ public class ExpressionNodeExplorer extends JPanel{
         importChanged = false;
 
         formPanel.reset();
+        textBox.setText(STRING_EMPTY);
         expressionController.putExpression(ev);
         refreshVariableView();
     }
