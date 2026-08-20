@@ -63,6 +63,11 @@ public class ExpressionNodeExplorer extends JPanel{
         public void releaseUpdatable(String name) {
 
         }
+
+        @Override
+        public void changesMade() {
+            
+        }
     };
 
     //Resolve lost dependency from import if an Updatable needs to be edited
@@ -176,12 +181,12 @@ public class ExpressionNodeExplorer extends JPanel{
         expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
 
 
-        JButton saveButton = new JButton("Save");
+        JButton addModifyButton = new JButton("Add/Modify");
         JCheckBox syntaxType = new JCheckBox("Prefix Syntax?");
 
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.add(syntaxType);
-        buttonPanel.add(saveButton);
+        buttonPanel.add(addModifyButton);
 
         setLayout(new BorderLayout());
 
@@ -234,7 +239,7 @@ public class ExpressionNodeExplorer extends JPanel{
         });
 
         //creates listener that uses the Add Variable Panel
-        saveButton.addActionListener(new ActionListener() {
+        addModifyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
@@ -438,6 +443,7 @@ public class ExpressionNodeExplorer extends JPanel{
                 //fresh import from this session.
                 listener.confirmUpdatableSaved(form.name());
             }
+            listener.changesMade();
         }
         wasEditingUpdatable = false;
         oldName = "";
