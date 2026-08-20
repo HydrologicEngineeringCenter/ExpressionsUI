@@ -6,4 +6,5 @@ public interface ExplorerListener {
     void discardImport();
     void replace(String oldName, String name);
     void releaseUpdatable(String name);
+    void changesMade();
 }

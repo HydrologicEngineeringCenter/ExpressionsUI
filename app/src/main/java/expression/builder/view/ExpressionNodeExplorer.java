@@ -28,6 +28,7 @@ public class ExpressionNodeExplorer extends JPanel{
     private ExpressionNodeTextBox textBox;
     private JLabel evaluationLabel;
     private JTextArea scriptTextArea;
+    private JScrollPane scriptScrollPane;
     private JTextArea commentTextArea;
     private JTextArea expresssionTextArea;
     private VariableTableView variableView;
@@ -63,6 +64,11 @@ public class ExpressionNodeExplorer extends JPanel{
         public void releaseUpdatable(String name) {
 
         }
+
+        @Override
+        public void changesMade() {
+            
+        }
     };
 
     //Resolve lost dependency from import if an Updatable needs to be edited
@@ -75,6 +81,7 @@ public class ExpressionNodeExplorer extends JPanel{
     
     //Set when the editMenu popup requests an edit; carried through to prefill the next Add/Edit Variable dialog.
     private AddVariablePanel.Result pendingEdit;
+    private JSplitPane expressionPreviewAndScript;
 
 
     public ExpressionNodeExplorer() {
@@ -169,19 +176,21 @@ public class ExpressionNodeExplorer extends JPanel{
 
 
         JPanel expressionPanel = new JPanel(new BorderLayout());
-        //Splitpane to edit the size of the box where typing happens and the box where the script format of the expression is shown.
-        expressionPanel.add(new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, new JScrollPane(scriptTextArea)), BorderLayout.CENTER);
+        //Split Pane to edit the size of the box where typing happens and the box where the script format of the expression is shown.
+        scriptScrollPane = new JScrollPane(scriptTextArea);
+        expressionPreviewAndScript = new JSplitPane(JSplitPane.VERTICAL_SPLIT, textBox, scriptScrollPane);
+        expressionPanel.add(expressionPreviewAndScript, BorderLayout.CENTER);
         expressionPanel.add(evaluationLabel, BorderLayout.SOUTH);
         expressionPanel.add(formPanel, BorderLayout.NORTH);
         expressionPanel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 8));
 
 
-        JButton saveButton = new JButton("Save");
+        JButton addModifyButton = new JButton("Add/Modify");
         JCheckBox syntaxType = new JCheckBox("Prefix Syntax?");
 
         JPanel buttonPanel = new JPanel(new FlowLayout());
         buttonPanel.add(syntaxType);
-        buttonPanel.add(saveButton);
+        buttonPanel.add(addModifyButton);
 
         setLayout(new BorderLayout());
 
@@ -234,7 +243,7 @@ public class ExpressionNodeExplorer extends JPanel{
         });
 
         //creates listener that uses the Add Variable Panel
-        saveButton.addActionListener(new ActionListener() {
+        addModifyButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
                 try {
@@ -314,13 +323,19 @@ public class ExpressionNodeExplorer extends JPanel{
                 } else {
                     //clear values if edit is requested on non Updatable later
                     wasEditingUpdatable = false;
-                    oldName = "";
+                    oldName = STRING_EMPTY;
                 }
                 //Always clear — a re-import flagged on a previous, abandoned edit must not leak here.
                 importChanged = false;
-                pendingEdit = new AddVariablePanel.Result(e.name(), e.comment(), e.variableType(), e.defaultValue().toString(), e.expression());
+                pendingEdit = new AddVariablePanel.Result(e.name(), e.comment(), e.variableType(), e.expression());
                 formPanel.setPrefill(pendingEdit);
-                if (!e.variableType().equals("Updatable Variable")) textBox.setExpressionNodeText(e.expressionNode());
+                if (!e.variableType().equals("Updatable Variable")){
+                    //Default value has no stored expression text, only its evaluated result (Object) — prefill
+                    //ExpressionPreview with that result so it can be re-evaluated and re-saved.
+                    textBox.setText(String.valueOf(e.defaultValue()));
+                } else {
+                    textBox.setExpressionNodeText(e.expressionNode());
+                }
             }
 
             @Override
@@ -337,11 +352,11 @@ public class ExpressionNodeExplorer extends JPanel{
             }
         });
 
-        formPanel.setListener(new ImportListener() {
+        formPanel.setListener(new AddVariablePanelListener() {
             @Override
             public String importRequested() {
                 if (listener==null) {
-                    return "";
+                    return STRING_EMPTY;
                 }
                 if (wasEditingUpdatable) {
                     //Re-importing replaces the previously-confirmed variable this row was tracking.
@@ -350,7 +365,7 @@ public class ExpressionNodeExplorer extends JPanel{
                     importChanged=true;
                 }
                 wasEditingUpdatable = false;
-                oldName = "";
+                oldName = STRING_EMPTY;
                 return listener.importUpdatable();
             }
 
@@ -360,6 +375,29 @@ public class ExpressionNodeExplorer extends JPanel{
                     return;
                 }
                 listener.discardImport();
+            }
+
+            @Override
+            public void hideScript(boolean constantOrUpdatable) {
+                scriptScrollPane.setVisible(constantOrUpdatable);
+                expressionPreviewAndScript.revalidate();
+                SwingUtilities.invokeLater(() ->
+                        expressionPreviewAndScript.setDividerLocation(constantOrUpdatable ? 0.2 : 0.7));
+            }
+
+            @Override
+            public void constantBorder() {
+                textBox.setBorder("Constant Value");
+            }
+
+            @Override
+            public void updatableBorder() {
+                textBox.setBorder("Default Value");
+            }
+
+            @Override
+            public void expressionBorder() {
+                textBox.setBorder("Expression Preview");
             }
         });
 
@@ -413,7 +451,7 @@ public class ExpressionNodeExplorer extends JPanel{
             return;
         }
 
-        EditEvent ev = expressionController.createEditEvent(this, form.name(), expression, form.comment(), form.variableType(), form.defaultValue());
+        EditEvent ev = expressionController.createEditEvent(this, form.name(), expression, form.comment(), form.variableType(), textBox.getExpression());
         if (ev == null) {
             return;
         }
@@ -438,12 +476,14 @@ public class ExpressionNodeExplorer extends JPanel{
                 //fresh import from this session.
                 listener.confirmUpdatableSaved(form.name());
             }
+            listener.changesMade();
         }
         wasEditingUpdatable = false;
         oldName = "";
         importChanged = false;
 
         formPanel.reset();
+        textBox.setText(STRING_EMPTY);
         expressionController.putExpression(ev);
         refreshVariableView();
     }
@@ -556,20 +596,24 @@ public class ExpressionNodeExplorer extends JPanel{
         currentExpression = null;
     }
 
+    //Helper method to load data through an outside source that saved the table rows
     public void setExpressions(List<ExpressionEntry> db){
         expressionController.setExpressions(db);
         variableView.setData(expressionController.getExpressions());
         refreshVariableView();
     }
 
+    //Helper method to allow saving of expression rows to external variable
     public List<ExpressionEntry> getExpressions() {
         return expressionController.getExpressions();
     }
 
+    //Deprecated, not really needed
     public DataProvider getDataProvider() {
         return expressionController.getDataProvider();
     }
 
+    //Method calls within Explorer cause flags to be raised elsewhere
     public void setExplorerListener(ExplorerListener listener){
         this.listener = listener;
     }

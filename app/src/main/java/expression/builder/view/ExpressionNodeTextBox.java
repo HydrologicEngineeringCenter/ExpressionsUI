@@ -111,6 +111,24 @@ public class ExpressionNodeTextBox extends JPanel {
         isProgrammaticUpdate = false;
     }
 
+    /**
+     * Raw syntax string to replace textBox when editing a constant/default value of updatable variable.
+     * @param text
+     */
+    public void setText(String text) {
+        isProgrammaticUpdate = true;
+        textArea.setText(text != null ? text : "");
+        textArea.setCaretPosition(0);
+        isProgrammaticUpdate = false;
+        if (textUpdateListener != null) {
+            textUpdateListener.onTextUpdated(textArea.getText());
+        }
+    }
+
+    public void setBorder(String borderName){
+        setBorder(BorderFactory.createTitledBorder(borderName));
+    }
+
     public String getExpression() {
         return textArea.getText();
     }
